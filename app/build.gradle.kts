@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.smartaquarium"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -43,8 +43,10 @@ android {
 }
 
 dependencies {
+    implementation (libs.numberpicker)
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
     implementation("com.github.codersalman:Gauge-Library-Android:0.0.1")
+    implementation ("androidx.compose.material3:material3:1.3.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -56,6 +58,7 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.android)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.play.services.maps)
+    implementation(libs.androidx.compose.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

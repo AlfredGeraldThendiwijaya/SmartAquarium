@@ -11,6 +11,7 @@ import com.example.smartaquarium.ViewUI.HomeScreen
 import androidx.compose.ui.Modifier
 import com.example.smartaquarium.ViewModel.HomeViewModel
 import com.example.smartaquarium.ViewUI.DetailScreen
+import com.example.smartaquarium.ViewUI.ScheduleScreen
 import com.example.smartaquarium.ViewUI.SettingScreen
 
 import com.example.smartaquarium.ViewUI.SplashScreen
@@ -37,6 +38,8 @@ fun NavigationApp() {
         composable(Screen.setting.route){
             SettingScreen(navController = navController)
         }
-
+        composable(Screen.schedule.route){
+            ScheduleScreen(navController = navController)
+        }
     }
 }

@@ -1,10 +1,7 @@
 package com.example.smartaquarium.ViewUI
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,42 +19,52 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.navigation.NavController
-import com.example.smartaquarium.Component.AddAquariumDialog
 import com.example.smartaquarium.Component.DetailInfoCard
-import com.example.smartaquarium.Component.GaugeMeter
+import com.example.smartaquarium.Component.GaugeMeterWithStatus
 import com.example.smartaquarium.Component.LineChartComponent
-import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetailViewModel
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.*
 import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.navyblue
 
 @Composable
-
-
-fun DetailScreen(navController: NavController, aquariumName: String, aquariumSerial: String,viewModel: DetailViewModel = viewModel()) {
+fun DetailScreen(
+    navController: NavController,
+    aquariumName: String,
+    aquariumSerial: String,
+    viewModel: DetailViewModel = viewModel()
+) {
     val sensorData by viewModel.sensorDataPoints
+    val scrollState = rememberScrollState() // Tambahkan state scroll
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = accentMint
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState), // Tambahkan scroll di sini
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(
-                modifier = Modifier.padding(top = 50.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.padding(top = 50.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
@@ -75,50 +82,74 @@ fun DetailScreen(navController: NavController, aquariumName: String, aquariumSer
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Column(
+            DetailInfoCard(name = aquariumName, id = aquariumSerial)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalArrangement = Arrangement.Start
             ) {
-                DetailInfoCard(name = aquariumName, id = aquariumSerial)
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 20.dp),
+                Text(
+                    modifier = Modifier.padding(horizontal = 20.dp),
                     text = "Detail Info: ",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = navyblue,
-                ) }
-                Spacer(modifier = Modifier.height(16.dp))
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
 
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                LineChartComponent(sensorData)
+            }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        shape = RoundedCornerShape(12.dp), // Biar sudutnya melengkung
-                        colors = CardDefaults.cardColors(containerColor = Color.White) // Background putih
-                    ) {
-                        LineChartComponent(sensorData) // Tampilkan grafik
-                    }
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .height(IntrinsicSize.Min)
-                            .padding(16.dp),
-                        shape = RoundedCornerShape(12.dp), // Biar sudutnya melengkung
-                        colors = CardDefaults.cardColors(containerColor = Color.White) // Background putih
-                    ) {
-                        GaugeMeter(percentage = 40)
-                    }
+                    GaugeMeterWithStatus(
+                        percentage = 51,
+                        ph = 7.2f,
+                        temperature = 26.5f,
+                        ntu = 2.3f,
+                        pph = 150f
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate("schedule") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Atur Jadwal Pemberian Makan",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
