@@ -1,6 +1,7 @@
 package com.example.smartaquarium.Component
 
 
+import android.view.ViewGroup
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -39,6 +41,18 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.unit.*
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 
 @Composable
 fun AddAquariumDialog(
@@ -326,6 +340,107 @@ fun LineChartComponent(dataPoints: List<Entry>) {
         }
     )
 }
+
+@Composable
+fun GaugeMeter(percentage: Int) {
+    val sweepAngle = (percentage / 100f) * 250f // Ubah dari 180° ke 250°
+    val backgroundAngle = 250f // Background lebih besar
+
+    val (gradientColors, statusText, statusColor) = when {
+        percentage < 50 -> Triple(
+            listOf(Color(0xFF4CAF50), Color(0xFFFFC107)),
+            "Aman",
+            Color(0xFF4A628A)
+        ) // Hijau ke Kuning
+        percentage in 50..79 -> Triple(
+            listOf(Color(0xFFFFC107), Color(0xFFFF9800)),
+            "Beresiko",
+            Color(0xFF4A628A)
+        ) // Kuning ke Oranye
+        else -> Triple(
+            listOf(Color(0xFFFF9800), Color(0xFFD32F2F)),
+            "Berbahaya",
+            Color.Red
+        ) // Oranye ke Merah
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .width(180.dp)
+            .height(200.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+
+    ) {
+        Text(
+            text = "Kualitas Air",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Gray,
+            modifier = Modifier.padding(bottom = 16.dp, start = 16.dp)
+                .align(Alignment.Start)
+        )
+
+        Box(contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.size(120.dp)) {
+                val strokeWidth = 18.dp.toPx()
+                val startAngle = 145f // Sesuaikan posisi awal agar lebih proporsional
+
+
+                drawArc(
+                    color = Color.LightGray.copy(alpha = 0.3f),
+                    startAngle = startAngle,
+                    sweepAngle = backgroundAngle,
+                    useCenter = false,
+                    style = Stroke(strokeWidth, cap = StrokeCap.Round)
+                )
+
+                // Arc indikator (warna gradient)
+                drawArc(
+                    brush = Brush.linearGradient(gradientColors),
+                    startAngle = startAngle,
+                    sweepAngle = sweepAngle,
+                    useCenter = false,
+                    style = Stroke(strokeWidth, cap = StrokeCap.Round)
+                )
+            }
+
+            // Persentase di tengah
+            Column(
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = buildAnnotatedString {
+                        append("$percentage")
+                        withStyle(
+                            style = SpanStyle(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                baselineShift = BaselineShift.Superscript
+                            )
+                        ) {
+                            append("%")
+                        }
+                    },
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+        }
+            // Status Air
+            Text(
+                text = statusText,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = statusColor,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
 
 
 

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.smartaquarium.Component.AddAquariumDialog
 import com.example.smartaquarium.Component.DetailInfoCard
+import com.example.smartaquarium.Component.GaugeMeter
 import com.example.smartaquarium.Component.LineChartComponent
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetailViewModel
@@ -94,6 +96,7 @@ fun DetailScreen(navController: NavController, aquariumName: String, aquariumSer
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
+
                 ) {
                     Card(
                         modifier = Modifier
@@ -104,8 +107,17 @@ fun DetailScreen(navController: NavController, aquariumName: String, aquariumSer
                     ) {
                         LineChartComponent(sensorData) // Tampilkan grafik
                     }
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(IntrinsicSize.Min)
+                            .padding(16.dp),
+                        shape = RoundedCornerShape(12.dp), // Biar sudutnya melengkung
+                        colors = CardDefaults.cardColors(containerColor = Color.White) // Background putih
+                    ) {
+                        GaugeMeter(percentage = 40)
+                    }
                 }
-
             }
         }
     }

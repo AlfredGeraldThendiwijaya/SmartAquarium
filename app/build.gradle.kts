@@ -39,10 +39,12 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
+    implementation("com.github.codersalman:Gauge-Library-Android:0.0.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -53,6 +55,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.runtime.android)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.play.services.maps)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
