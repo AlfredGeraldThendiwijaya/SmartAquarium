@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "393789552767",
+    "firebase_url": "https://smart-aquarium-fe20f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "smart-aquarium-fe20f",
+    "storage_bucket": "smart-aquarium-fe20f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:393789552767:android:7aea439035ee8f7eaaa74a",
+        "android_client_info": {
+          "package_name": "com.example.smartaquarium"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "393789552767-8f05n5engvrboj59utjv3dmulc11dkfu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smartaquarium",
+            "certificate_hash": "88b0ebd46d08880683c45286c0eea366a6c261e5"
+          }
+        },
+        {
+          "client_id": "393789552767-kcjcgr18a76gvl0vrh5a7kl46ncgb5rg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2zlSHfqc5QB2JMmdvaJLu40kzGOmpRkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "393789552767-kcjcgr18a76gvl0vrh5a7kl46ncgb5rg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

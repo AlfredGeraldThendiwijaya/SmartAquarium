@@ -2,20 +2,39 @@ package com.example.smartaquarium.Component
 
 
 import android.annotation.SuppressLint
-import android.view.ViewGroup
-import android.widget.NumberPicker
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,44 +45,37 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import com.chargemap.compose.numberpicker.NumberPicker
 import com.example.smartaquarium.R
+import com.example.smartaquarium.ViewModel.DetailViewModel
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.BaselineShift
-import androidx.compose.ui.unit.*
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
-import androidx.wear.compose.material.PickerDefaults
-import com.example.smartaquarium.ui.theme.navyblue
-import com.chargemap.compose.numberpicker.NumberPicker
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 
 @Composable
 fun AddAquariumDialog(
@@ -112,17 +124,22 @@ fun AddAquariumDialog(
 @Composable
 fun InfoCardContainer(
     onAddAquarium: (String, String) -> Unit,
-    aquariumCount: Int, // Tambahkan parameter ini
+    aquariumCount: Int,
     modifier: Modifier = Modifier
 ) {
     var isDialogOpen by remember { mutableStateOf(false) }
+    var aquariumName by remember { mutableStateOf("") }
+    var serialNumber by remember { mutableStateOf("") }
+    var isNameError by remember { mutableStateOf(false) }
+    var isSerialError by remember { mutableStateOf(false) }
+    val user = FirebaseAuth.getInstance().currentUser
 
     Box(
         modifier = modifier.fillMaxWidth()
     ) {
         InfoCard(
             modifier = Modifier.align(Alignment.Center),
-            aquariumCount = aquariumCount // Gunakan parameter yang benar
+            aquariumCount = aquariumCount
         )
 
         Image(
@@ -138,15 +155,107 @@ fun InfoCardContainer(
     }
 
     if (isDialogOpen) {
-        AddAquariumDialog(
-            onDismiss = { isDialogOpen = false },
-            onConfirm = { name, serial ->
-                onAddAquarium(name, serial)
-                isDialogOpen = false
-            }
+        AlertDialog(
+            onDismissRequest = { isDialogOpen = false },
+            title = { Text("Tambah Akuarium") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = aquariumName,
+                        onValueChange = {
+                            aquariumName = it
+                            isNameError = it.isBlank()
+                        },
+                        label = { Text("Nama Akuarium") },
+                        placeholder = { Text("Masukkan nama akuarium") },
+                        isError = isNameError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (isNameError) {
+                        Text(
+                            text = "Nama akuarium tidak boleh kosong",
+                            color = Color.Red,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = serialNumber,
+                        onValueChange = {
+                            serialNumber = it
+                            isSerialError = it.isBlank()
+                        },
+                        label = { Text("Serial Number") },
+                        placeholder = { Text("Masukkan serial number") },
+                        isError = isSerialError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (isSerialError) {
+                        Text(
+                            text = "Serial number tidak boleh kosong",
+                            color = Color.Red,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isNameError = aquariumName.isBlank()
+                        isSerialError = serialNumber.isBlank()
+                        if (!isNameError && !isSerialError && user != null) {
+                            postAquariumData(user.uid, serialNumber, aquariumName) {
+                                onAddAquarium(aquariumName, serialNumber)
+                                isDialogOpen = false
+                            }
+                        }
+                    }
+                ) {
+                    Text("Tambah")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isDialogOpen = false }) {
+                    Text("Batal")
+                }
+            },
+            containerColor = Color.White,
+            textContentColor = Color.Black
         )
     }
 }
+
+fun postAquariumData(userId: String, unitId: String, unitName: String, onSuccess: () -> Unit) {
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val client = OkHttpClient()
+            val json = JSONObject()
+            json.put("userId", userId)
+            json.put("unitId", unitId)
+            json.put("unitName", unitName)
+
+            val requestBody = json.toString().toRequestBody("application/json".toMediaTypeOrNull())
+            val request = Request.Builder()
+                .url("https://us-central1-smart-aquarium-fe20f.cloudfunctions.net/api/add-unit")
+                .post(requestBody)
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                Log.d("FirebaseAPI", "Success: ${response.body?.string()}")
+                onSuccess()
+            } else {
+                Log.e("FirebaseAPI", "Error: ${response.body?.string()}")
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseAPI", "Exception: ${e.message}")
+        }
+    }
+}
+
+
+
 
 
 
@@ -155,9 +264,12 @@ fun InfoCard(
     modifier: Modifier = Modifier,
     aquariumCount: Int
 ) {
+    val user = FirebaseAuth.getInstance().currentUser
+    val displayName = user?.displayName?.split(" ")?.firstOrNull() ?: "Guest"
+
     Box(
         modifier = modifier
-            .width(600.dp) // Fix lebar ke 400dp
+            .width(600.dp)
             .height(170.dp)
             .clip(RoundedCornerShape(40.dp))
             .background(Color.Transparent)
@@ -187,11 +299,11 @@ fun InfoCard(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Hi, Cindy",
+                    text = "Hi, $displayName",
                     color = Color(0xff111827),
                     fontSize = 35.sp,
                     fontWeight = FontWeight.Bold,
-                        modifier = Modifier.offset(y = (-20).dp)
+                    modifier = Modifier.offset(y = (-20).dp)
                 )
                 Spacer(modifier = Modifier.height(1.dp))
                 Text(
@@ -203,6 +315,7 @@ fun InfoCard(
         }
     }
 }
+
 @Composable
 fun ListAquariumCard(modifier: Modifier = Modifier , name: String ,onClick: () -> Unit) {
     Box(
@@ -352,15 +465,19 @@ fun LineChartComponent(dataPoints: List<Entry>) {
     )
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun GaugeMeterWithStatus(
     percentage: Int,
-    ph: Float,
-    temperature: Float,
-    ntu: Float,
-    pph: Float,
+    ph: Double,
+    temperature: Double,
+    pph: Double,
+    ntu:Double,
+    viewModel: DetailViewModel, // Ambil ViewModel
     modifier: Modifier = Modifier
 ) {
+    val turbidity by viewModel.turbidity.collectAsState() // Mengamati perubahan NTU dari ViewModel
+    val temperature by viewModel.temperature.collectAsState()
     val sweepAngle = (percentage / 100f) * 250f // 250° agar lebih dinamis
     val backgroundAngle = 250f
 
@@ -457,14 +574,17 @@ fun GaugeMeterWithStatus(
                     .weight(1f)
                     .padding(start = 16.dp)
             ) {
-                ParameterItem(R.drawable.suhu, "Suhu", "$temperature °C")
-                ParameterItem(R.drawable.ph, "pH", "$ph")
-                ParameterItem(R.drawable.turbidity, "NTU", "$ntu NTU")
+                val formattedTurbidity = turbidity?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
+                val formattedTemperature = temperature?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
+                ParameterItem(R.drawable.suhu, "Suhu", "$formattedTemperature °C")
+                ParameterItem(R.drawable.ph, "pH", "$ph pH")
+                ParameterItem(R.drawable.turbidity, "NTU", "$formattedTurbidity NTU")
                 ParameterItem(R.drawable.tds, "TDS", "$pph ppm")
             }
         }
     }
 }
+
 
 @Composable
 fun ParameterItem(iconRes: Int, label: String, value: String) {

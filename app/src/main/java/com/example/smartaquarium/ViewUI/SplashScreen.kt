@@ -23,10 +23,12 @@ import androidx.navigation.NavController
 import com.example.smartaquarium.R
 import com.example.smartaquarium.navigation.Screen
 import com.example.smartaquarium.ui.theme.pastelBlue
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavController){
+    val user = FirebaseAuth.getInstance().currentUser
     val scale = remember { Animatable(0f) }
     LaunchedEffect(key1 = true) {
         scale.animateTo(
@@ -37,8 +39,14 @@ fun SplashScreen(navController: NavController){
             )
         )
         delay(2000) // Lama splash screen ditampilkan
-        navController.navigate(Screen.Home.route) {
-            popUpTo(Screen.Splash.route) { inclusive = true }
+        if (user != null) {
+            navController.navigate(Screen.Home.route) {
+                popUpTo(Screen.Splash.route) { inclusive = true }
+            }
+        } else {
+            navController.navigate(Screen.login.route) {
+                popUpTo(Screen.Splash.route) { inclusive = true }
+            }
         }
     }
     Box(modifier = Modifier

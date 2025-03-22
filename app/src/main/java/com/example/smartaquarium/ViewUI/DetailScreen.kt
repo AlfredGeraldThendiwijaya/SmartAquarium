@@ -1,5 +1,6 @@
 package com.example.smartaquarium.ViewUI
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,8 @@ import com.example.smartaquarium.ViewModel.DetailViewModel
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.navyblue
 
@@ -47,9 +50,14 @@ fun DetailScreen(
     aquariumSerial: String,
     viewModel: DetailViewModel = viewModel()
 ) {
-    val sensorData by viewModel.sensorDataPoints
+    val sensorData by viewModel.sensorDataPoints.collectAsState()
+    val turbidity by viewModel.turbidity.collectAsState()
+    val temperature by viewModel.temperature.collectAsState()
     val scrollState = rememberScrollState() // Tambahkan state scroll
-
+    LaunchedEffect(aquariumSerial) {
+        Log.d("DETAIL_SCREEN", "Fetching turbidity for serial: $aquariumSerial")
+        viewModel.startRealtimeUpdates(aquariumSerial)
+    }
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = accentMint
@@ -123,10 +131,11 @@ fun DetailScreen(
                 ) {
                     GaugeMeterWithStatus(
                         percentage = 51,
-                        ph = 7.2f,
-                        temperature = 26.5f,
-                        ntu = 2.3f,
-                        pph = 150f
+                        ph = 7.2f.toDouble(),
+                        temperature = (temperature ?: 0.0).toDouble(),
+                        ntu = (turbidity ?: 0.0).toDouble(),
+                        pph = 150f.toDouble(),
+                        viewModel = viewModel
                     )
                 }
             }

@@ -40,12 +40,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.navyblue
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SettingScreen(navController: NavController) {
+    val user = FirebaseAuth.getInstance().currentUser
+    val displayName = user?.displayName?.split(" ")?.firstOrNull() ?: "Guest"
+    val userEmail = user?.email ?: "No email"
+    val userPhotoUrl = user?.photoUrl?.toString() ?: "https://via.placeholder.com/100"
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = accentMint
@@ -85,7 +91,7 @@ fun SettingScreen(navController: NavController) {
                 Spacer(Modifier.height(screenHeight * 0.03f)) // Spacer responsif
 
                 Image(
-                    painter = painterResource(id = R.drawable.user),
+                    painter = rememberAsyncImagePainter(model = userPhotoUrl),
                     contentDescription = "user_avatar",
                     modifier = Modifier
                         .size(screenWidth * 0.25f) // Ukuran gambar responsif
@@ -95,13 +101,13 @@ fun SettingScreen(navController: NavController) {
                 Spacer(Modifier.height(screenHeight * 0.02f))
 
                 Text(
-                    text = "Username",
+                    text = displayName,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Email",
+                    text = userEmail,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.DarkGray
@@ -124,6 +130,7 @@ fun SettingScreen(navController: NavController) {
                         modifier = Modifier.fillMaxWidth()
                             .padding(start = 16.dp)
                             .clickable{
+                                navController.navigate("termsandcondition")
                             }
                     ) {
                         Icon(
@@ -148,23 +155,29 @@ fun SettingScreen(navController: NavController) {
                         .height(60.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color.White.copy(alpha = 0.8f))
-                        .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp)),
+                        .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp))
+                        .clickable {
+                            FirebaseAuth.getInstance().signOut()  // Logout dari Firebase
+                            navController.navigate("login") {
+                                popUpTo("home") { inclusive = true } // Hapus HomeScreen dari backstack
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .padding(start = 16.dp)
-                            .clickable {  }
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.exit_320140),
-                            contentDescription = "terms condition",
+                            contentDescription = "Logout",
                             modifier = Modifier.size(25.dp),
                             tint = navyblue
                         )
-                        Spacer(modifier = Modifier.width(16.dp)) // Tambahkan jarak antara ikon & teks
+                        Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "Log out",
                             color = Color(0xff4a628a),
@@ -173,6 +186,7 @@ fun SettingScreen(navController: NavController) {
                         )
                     }
                 }
+
             }
         }
     }

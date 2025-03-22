@@ -1,5 +1,7 @@
 package com.example.smartaquarium.ViewUI
 
+import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,15 +26,34 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.smartaquarium.R
 import com.example.smartaquarium.Component.InfoCardContainer
+import coil.compose.rememberAsyncImagePainter
+
 import com.example.smartaquarium.Component.ListAquariumCard
 import com.example.smartaquarium.ViewModel.HomeViewModel
 import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.darkBlue
 import com.example.smartaquarium.ui.theme.navyblue
 import com.example.smartaquarium.ui.theme.skyBlue
+import com.google.firebase.auth.FirebaseAuth
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
+    BackHandler {
+        // Langsung exit aplikasi kalau di HomeScreen
+        (navController.context as? Activity)?.finish()
+    }
+    val user = FirebaseAuth.getInstance().currentUser
+    val userPhotoUrl = user?.photoUrl?.toString() ?: "https://via.placeholder.com/100"
+    val aquariumList by viewModel.aquariums.collectAsState() // Gunakan collectAsState untuk mendapatkan update otomatis
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchAquariums() // Ambil data saat pertama kali masuk ke layar
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = accentMint
@@ -58,11 +79,12 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                         .align(Alignment.TopEnd) // Pastikan ada di sudut kanan atas
                         .padding(top = 28.dp, end = 16.dp) // Kasih padding biar nggak terlalu mepet
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.user),
+                    Image(
+                        painter = rememberAsyncImagePainter(model = userPhotoUrl),
                         contentDescription = "User Profile",
-                        modifier = Modifier.size(100.dp),
-                        tint = Color.Unspecified
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(50.dp)), // Biar bentuknya bulat
                     )
                 }
                 Box(
@@ -77,7 +99,8 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                             viewModel.addAquarium(name,serial) // Simpan ke ViewModel
                         },
                         modifier = Modifier.widthIn(max = 350.dp),
-                        aquariumCount = viewModel.aquariums.size
+                        aquariumCount = aquariumList.size
+
                     )
                 }
             }
@@ -109,9 +132,9 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 }
             }
 
-            if (viewModel.aquariums.isEmpty()) {
+            if (aquariumList.isEmpty()) {
                 Column(
-                    Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -142,6 +165,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     )
                 }
             } else {
+                // Jika ada data, tampilkan dalam LazyColumn
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -150,11 +174,12 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(viewModel.aquariums) { aquarium ->
+                    items(aquariumList) { aquarium ->
+                        Log.d("UI", "Aquarium List in UI: $aquariumList")
                         ListAquariumCard(
-                            name = aquarium.name,
+                            name = aquarium.unitName,
                             onClick = {
-                                navController.navigate("detail/${aquarium.name}/${aquarium.serial}")
+                                navController.navigate("detail/${aquarium.unitName}/${aquarium.unitId}") // ✅ Gunakan unitId sebagai serial
                             }
                         )
                     }

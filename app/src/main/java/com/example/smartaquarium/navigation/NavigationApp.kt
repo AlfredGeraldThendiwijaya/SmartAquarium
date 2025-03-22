@@ -13,8 +13,10 @@ import com.example.smartaquarium.ViewModel.HomeViewModel
 import com.example.smartaquarium.ViewUI.DetailScreen
 import com.example.smartaquarium.ViewUI.ScheduleScreen
 import com.example.smartaquarium.ViewUI.SettingScreen
+import com.example.smartaquarium.ViewUI.LoginScreen
 
 import com.example.smartaquarium.ViewUI.SplashScreen
+import com.example.smartaquarium.ViewUI.TermsAndConditionsScreen
 
 @SuppressLint("ViewModelConstructorInComposable")
 @Composable
@@ -23,6 +25,9 @@ fun NavigationApp() {
     NavHost(navController = navController, startDestination = Screen.Splash.route) {
         composable(Screen.Splash.route) {
             SplashScreen(navController = navController)
+        }
+        composable(Screen.login.route){
+            LoginScreen(navController = navController)
         }
         composable(Screen.Home.route) {
             HomeScreen(navController = navController, viewModel = HomeViewModel())
@@ -40,6 +45,9 @@ fun NavigationApp() {
         }
         composable(Screen.schedule.route){
             ScheduleScreen(navController = navController)
+        }
+        composable(Screen.termsandcondition.route){
+            TermsAndConditionsScreen(navController = navController)
         }
     }
 }
