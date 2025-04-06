@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,11 +26,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -62,8 +66,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import com.chargemap.compose.numberpicker.NumberPicker
 import com.example.smartaquarium.R
+import com.example.smartaquarium.ViewModel.Aquarium
 import com.example.smartaquarium.ViewModel.DetailViewModel
 import com.example.smartaquarium.network.ScheduleData
+import com.example.smartaquarium.network.deleteUnit
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
@@ -145,16 +151,25 @@ fun InfoCardContainer(
             aquariumCount = aquariumCount
         )
 
-        Image(
-            painter = painterResource(id = R.drawable.add_device),
-            contentDescription = "discus-fish-add device",
+        Box(
             modifier = Modifier
                 .size(140.dp)
                 .align(Alignment.TopEnd)
                 .offset(y = (-30).dp, x = (-15).dp)
                 .zIndex(1f)
-                .clickable { isDialogOpen = true }
-        )
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
+                    isDialogOpen = true
+                }
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.add_device),
+                contentDescription = "Tambah Akuarium",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 
     if (isDialogOpen) {
@@ -319,13 +334,29 @@ fun InfoCard(
     }
 }
 
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ListAquariumCard(modifier: Modifier = Modifier , name: String ,onClick: () -> Unit) {
+fun ListAquariumCard(
+    modifier: Modifier = Modifier,
+    name: String,
+    unitId: String,
+    percentage: Int, // ⬅️ ambil dari GaugeMeterWithStatus
+    statusText: String,
+    onClick: () -> Unit,
+    onDelete: (String) -> Unit,
+) {
+    val statusInfo = getStatusInfoFromPercentage(percentage)
+
     Box(
         modifier = modifier
-            .fillMaxWidth(0.9f) // Biar nggak terlalu mepet ke kiri
+            .fillMaxWidth(0.9f)
             .height(107.dp)
-            .clickable { onClick() }) {
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { onDelete(unitId) }
+            )
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -334,6 +365,8 @@ fun ListAquariumCard(modifier: Modifier = Modifier , name: String ,onClick: () -
                 .background(Color.White.copy(alpha = 0.8f))
                 .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp))
         )
+
+        // 🐟 Gambar Aquarium
         Image(
             painter = painterResource(id = R.drawable.fish_tank),
             contentDescription = "fish-tank_2173805 2",
@@ -342,6 +375,8 @@ fun ListAquariumCard(modifier: Modifier = Modifier , name: String ,onClick: () -
                 .offset(x = 16.dp, y = 28.dp)
                 .size(50.dp)
         )
+
+        // 🐠 Nama Aquarium
         Text(
             text = name,
             color = Color(0xff4a628a),
@@ -353,6 +388,8 @@ fun ListAquariumCard(modifier: Modifier = Modifier , name: String ,onClick: () -
                 .align(Alignment.TopStart)
                 .offset(x = 79.dp, y = 28.dp)
         )
+
+        // ⏰ Info Jadwal
         Text(
             text = "Tidak ada penjadwalan pemberian makan",
             color = Color(0xff6c7278),
@@ -362,8 +399,32 @@ fun ListAquariumCard(modifier: Modifier = Modifier , name: String ,onClick: () -
                 .align(Alignment.TopStart)
                 .offset(x = 79.dp, y = 67.dp)
         )
+
+        // 🚨 Status Icon & Text
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Image(
+                painter = painterResource(id = statusInfo.iconResId),
+                contentDescription = "Status Icon",
+                modifier = Modifier.size(50.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = statusInfo.statusText,
+                fontSize = 14.sp,
+                color = statusInfo.statusColor,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
+
+
 
 @Composable
 fun DetailInfoCard(
@@ -414,6 +475,37 @@ fun DetailInfoCard(
         }
     }
 }
+
+data class StatusInfo(
+    val gradientColors: List<Color>,
+    val statusText: String,
+    val statusColor: Color,
+    val iconResId: Int
+)
+
+fun getStatusInfoFromPercentage(percentage: Int): StatusInfo {
+    return when {
+        percentage < 50 -> StatusInfo(
+            gradientColors = listOf(Color(0xFF4CAF50), Color(0xFFFFC107)),
+            statusText = "Aman",
+            statusColor = Color(0xFF05B89D),
+            iconResId = R.drawable.clean // ✅ icon aman
+        )
+        percentage in 50..79 -> StatusInfo(
+            gradientColors = listOf(Color(0xFFFFC107), Color(0xFFFF9800)),
+            statusText = "Beresiko",
+            statusColor = Color(0xFFFD5E00),
+            iconResId = R.drawable.risk // ✅ icon risiko
+        )
+        else -> StatusInfo(
+            gradientColors = listOf(Color(0xFFFF9800), Color(0xFFD32F2F)),
+            statusText = "Berbahaya",
+            statusColor = Color.Red,
+            iconResId = R.drawable.danger // ✅ icon bahaya
+        )
+    }
+}
+
 @Composable
 fun LineChartComponent(dataPoints: List<Entry>) {
     AndroidView(
@@ -591,6 +683,25 @@ fun GaugeMeterWithStatus(
         }
     }
 }
+@Composable
+fun InfoItem(iconResId: Int, label: String, description: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Image(
+            painter = painterResource(id = iconResId),
+            contentDescription = label,
+            modifier = Modifier
+                .size(34.dp)
+                .padding(end = 8.dp)
+        )
+        Column {
+            Text(text = label, fontWeight = FontWeight.Bold)
+            Text(text = description, fontSize = 12.sp)
+        }
+    }
+}
 
 
 @Composable
@@ -618,7 +729,7 @@ fun ParameterItem(iconRes: Int, label: String, value: String) {
 @Composable
 fun ScheduleCard(
     schedule: ScheduleData, // ✅ Ubah dari String → ScheduleData biar ada ID-nya
-    onDelete: (String) -> Unit, // ✅ Callback untuk hapus
+    onDelete: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isActive by remember { mutableStateOf(true) }

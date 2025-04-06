@@ -2,46 +2,57 @@ package com.example.smartaquarium.ViewUI
 
 import android.app.Activity
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.smartaquarium.R
-import com.example.smartaquarium.Component.InfoCardContainer
 import coil.compose.rememberAsyncImagePainter
-
+import com.example.smartaquarium.Component.InfoCardContainer
 import com.example.smartaquarium.Component.ListAquariumCard
+import com.example.smartaquarium.R
+import com.example.smartaquarium.ViewModel.Aquarium
 import com.example.smartaquarium.ViewModel.HomeViewModel
 import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.darkBlue
 import com.example.smartaquarium.ui.theme.navyblue
-import com.example.smartaquarium.ui.theme.skyBlue
 import com.google.firebase.auth.FirebaseAuth
-import androidx.activity.compose.BackHandler
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewModel()) {
@@ -55,6 +66,9 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
     val aquariumList = viewModel.aquariums
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedUnitId by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) {
         Log.d("HomeScreen", "LaunchedEffect dipanggil")
         viewModel.fetchAquariums() // Ambil data saat pertama kali masuk ke layar
@@ -66,6 +80,39 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
         modifier = Modifier.fillMaxSize(),
         color = accentMint
     ) {
+        if (showDialog && selectedUnitId != null) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = {
+                    Text(text = "Konfirmasi Hapus")
+                },
+                text = {
+                    Text(text = "Yakin ingin menghapus aquarium ini? Tindakan ini tidak bisa dibatalkan.")
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            val userId = FirebaseAuth.getInstance().currentUser?.uid
+                            if (userId != null && selectedUnitId != null) {
+                                viewModel.deleteSchedule(userId, selectedUnitId!!)
+                            }
+                            showDialog = false
+                        }
+                    ) {
+                        Text("Hapus")
+                    }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            showDialog = false
+                        }
+                    ) {
+                        Text("Batal")
+                    }
+                }
+            )
+        }
         Column {
             Box(
                 modifier = Modifier.fillMaxWidth()
@@ -130,7 +177,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
                     modifier = Modifier.weight(1f)
                 )
 
-                IconButton(onClick = {}) {
+                IconButton(onClick = { viewModel.sortAquariumsByName()}) {
                     Icon(
                         painter = painterResource(id = R.drawable.sorting),
                         contentDescription = "Filter Icon",
@@ -199,16 +246,25 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         items(aquariumList) { aquarium ->
-                            Log.d("UI", "Aquarium List in UI: $aquariumList")
                             ListAquariumCard(
                                 name = aquarium.unitName,
+                                unitId = aquarium.unitId,
+                                percentage = 50,
+                                statusText = "Berisiko",
                                 onClick = {
                                     navController.navigate("detail/${aquarium.unitName}/${aquarium.unitId}")
+                                },
+                                onDelete = { unitId ->
+                                    // munculin AlertDialog konfirmasi delete
+                                    selectedUnitId = unitId
+                                    showDialog = true
                                 }
                             )
                         }
+
                     }
                 }
+
             }
         }
     }

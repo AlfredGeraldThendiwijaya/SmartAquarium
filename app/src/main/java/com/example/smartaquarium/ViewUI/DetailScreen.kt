@@ -1,26 +1,15 @@
 package com.example.smartaquarium.ViewUI
 
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,18 +17,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.navigation.NavController
 import com.example.smartaquarium.Component.DetailInfoCard
 import com.example.smartaquarium.Component.GaugeMeterWithStatus
+import com.example.smartaquarium.Component.InfoItem
 import com.example.smartaquarium.Component.LineChartComponent
+import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetailViewModel
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.navyblue
 
@@ -53,11 +37,14 @@ fun DetailScreen(
     val sensorData by viewModel.sensorDataPoints.collectAsState()
     val turbidity by viewModel.turbidity.collectAsState()
     val temperature by viewModel.temperature.collectAsState()
-    val scrollState = rememberScrollState() // Tambahkan state scroll
+    val scrollState = rememberScrollState()
+    val showDialog = remember { mutableStateOf(false) }
+
     LaunchedEffect(aquariumSerial) {
         Log.d("DETAIL_SCREEN", "Fetching turbidity for serial: $aquariumSerial")
         viewModel.startRealtimeUpdates(aquariumSerial)
     }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = accentMint
@@ -65,30 +52,42 @@ fun DetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState), // Tambahkan scroll di sini
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
-                modifier = Modifier.padding(top = 50.dp)
+                modifier = Modifier
+                    .padding(top = 50.dp, start = 8.dp, end = 16.dp)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.Rounded.KeyboardArrowLeft,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = navyblue
+                        )
+                    }
+                    Text(
+                        text = "Info Aquarium",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = navyblue
+                    )
+                }
+
+                IconButton(onClick = { showDialog.value = true }) {
                     Icon(
-                        Icons.Rounded.KeyboardArrowLeft,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Info Icon",
                         tint = navyblue
                     )
                 }
-                Text(
-                    text = "Info Aquarium",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = navyblue
-                )
             }
+
             Spacer(modifier = Modifier.height(16.dp))
             DetailInfoCard(name = aquariumName, id = aquariumSerial)
             Spacer(modifier = Modifier.height(16.dp))
@@ -105,6 +104,7 @@ fun DetailScreen(
                     color = navyblue,
                 )
             }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Card(
@@ -160,5 +160,35 @@ fun DetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+
+        // 🧾 AlertDialog untuk info ikon
+        if (showDialog.value) {
+            AlertDialog(
+                onDismissRequest = { showDialog.value = false },
+                confirmButton = {
+                    TextButton(onClick = { showDialog.value = false }) {
+                        Text("Tutup")
+                    }
+                },
+                title = {
+                    Text(
+                        text = "Penjelasan Indikator",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        InfoItem(R.drawable.suhu, "Suhu", "Menunjukkan suhu air dalam akuarium.")
+                        InfoItem(R.drawable.ph, "pH", "Mengukur tingkat keasaman air.")
+                        InfoItem(R.drawable.turbidity, "Turbidity", "Menunjukkan tingkat kejernihan air(NTU).")
+                        InfoItem(R.drawable.tds, "TDS", "Menunjukkan jumlah padatan terlarut (ppm).")
+                        InfoItem(R.drawable.risk, "Status Resiko", "Menunjukkan status Aman, Beresiko, atau Berbahaya.")
+                    }
+                }
+            )
+        }
+
     }
 }

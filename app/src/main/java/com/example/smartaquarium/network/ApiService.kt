@@ -20,6 +20,15 @@ data class AddUnitRequest(
     val unitId: String,
     val unitName: String
 )
+data class deleteUnit(
+    val userId: String,
+    val unitId: String,
+)
+
+data class deleteResponse(
+    val message: String,
+    val schedules: List<deleteUnit>? = null  // ✅ Ubah ke List kalau API balikin array
+)
 data class turbidity_reading(
     val latestData: LatestData? = null
 )
@@ -106,7 +115,11 @@ interface ApiService {
         @Path("schedule_id") scheduleId: String
     ): ScheduleResponse
 
-
+    @DELETE("delete-unit/{userId}/{unitId}")
+    suspend fun deleteUnit(
+        @Path("userId") userId: String,
+        @Path("unitId") unitId: String
+    ):deleteResponse
 }
 
 

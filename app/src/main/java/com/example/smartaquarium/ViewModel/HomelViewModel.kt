@@ -7,6 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartaquarium.network.AddUnitRequest
 import com.example.smartaquarium.network.AquariumResponse
 import com.example.smartaquarium.network.RetrofitInstance
+import com.example.smartaquarium.network.RetrofitInstance.apiService
+import com.example.smartaquarium.network.ScheduleData
+import com.example.smartaquarium.network.deleteUnit
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -35,9 +38,30 @@ data class Aquarium(
         private val _isLoading = MutableStateFlow(false)
         val isLoading: StateFlow<Boolean> = _isLoading
 
+        enum class SortOrder { ASCENDING, DESCENDING }
+
+        private val _deleteUnit = MutableStateFlow<List<deleteUnit>>(emptyList())
+        val deleteUnit: StateFlow<List<deleteUnit>> = _deleteUnit
+
+        private var currentSortOrder = SortOrder.ASCENDING // default
+
         init {
             Log.d("ViewModel", "HomeViewModel DI-INISIALISASI")
             fetchAquariums()
+        }
+
+        fun sortAquariumsByName() {
+            val sorted = when (currentSortOrder) {
+                SortOrder.ASCENDING -> _aquariums.sortedBy { it.unitName.lowercase() }
+                SortOrder.DESCENDING -> _aquariums.sortedByDescending { it.unitName.lowercase() }
+            }
+
+            _aquariums.clear()
+            _aquariums.addAll(sorted)
+
+            // toggle sort order biar pas diklik lagi bisa kebalik
+            currentSortOrder = if (currentSortOrder == SortOrder.ASCENDING)
+                SortOrder.DESCENDING else SortOrder.ASCENDING
         }
 
         fun fetchAquariums() {
@@ -85,10 +109,35 @@ data class Aquarium(
         viewModelScope.launch {
             try {
                 RetrofitInstance.apiService.addAquarium(request)
+                fetchAquariums()
                 delay(1000) // ✅ Tunggu biar Firebase update otomatis
+
             } catch (e: Exception) {
                 println("Error adding aquarium: ${e.message}")
             }
         }
     }
+
+        fun deleteSchedule(userId: String, unitId: String) {
+            viewModelScope.launch {
+                try {
+                    val response = apiService.deleteUnit(userId,unitId)
+
+                    // ✅ Cek ulang pesan yang diterima API
+                    Log.d("HomeViewModel", "Response message: ${response.message}")
+
+                    if (response.message.lowercase().contains("berhasil dihapus")) {
+                        Log.d("HomeViewModel", "Jadwal $unitId berhasil dihapus")
+
+                        // ✅ Update UI secara langsung
+                        fetchAquariums()
+
+                    } else {
+                        Log.e("HomeViewModel", "Gagal hapus unit: ${response.message}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("HomeViewModel", "DELETE Error: ${e.message}")
+                }
+            }
+        }
 }
