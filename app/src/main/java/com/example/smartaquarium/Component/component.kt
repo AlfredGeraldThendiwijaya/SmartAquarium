@@ -5,10 +5,12 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +63,7 @@ import androidx.compose.ui.zIndex
 import com.chargemap.compose.numberpicker.NumberPicker
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetailViewModel
+import com.example.smartaquarium.network.ScheduleData
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
@@ -478,6 +481,8 @@ fun GaugeMeterWithStatus(
 ) {
     val turbidity by viewModel.turbidity.collectAsState() // Mengamati perubahan NTU dari ViewModel
     val temperature by viewModel.temperature.collectAsState()
+    val ph by viewModel.ph.collectAsState()
+    val tds by viewModel.tds.collectAsState()
     val sweepAngle = (percentage / 100f) * 250f // 250° agar lebih dinamis
     val backgroundAngle = 250f
 
@@ -576,10 +581,12 @@ fun GaugeMeterWithStatus(
             ) {
                 val formattedTurbidity = turbidity?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
                 val formattedTemperature = temperature?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
+                val formattedPh = ph?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
+                val formattedTds = tds?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
                 ParameterItem(R.drawable.suhu, "Suhu", "$formattedTemperature °C")
-                ParameterItem(R.drawable.ph, "pH", "$ph pH")
+                ParameterItem(R.drawable.ph, "pH", "$formattedPh pH")
                 ParameterItem(R.drawable.turbidity, "NTU", "$formattedTurbidity NTU")
-                ParameterItem(R.drawable.tds, "TDS", "$pph ppm")
+                ParameterItem(R.drawable.tds, "TDS", "$formattedTds ppm")
             }
         }
     }
@@ -607,15 +614,23 @@ fun ParameterItem(iconRes: Int, label: String, value: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun ScheduleCard(modifier: Modifier = Modifier) {
-    var isActive by remember { mutableStateOf(true) } // ✅ State untuk switch
+fun ScheduleCard(
+    schedule: ScheduleData, // ✅ Ubah dari String → ScheduleData biar ada ID-nya
+    onDelete: (String) -> Unit, // ✅ Callback untuk hapus
+    modifier: Modifier = Modifier
+) {
+    var isActive by remember { mutableStateOf(true) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp)
+            .combinedClickable(
+                onClick = {}, // Klik biasa tidak ada aksi
+                onLongClick = { onDelete(schedule.id) } // ✅ Long press untuk hapus
+            ),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -636,14 +651,13 @@ fun ScheduleCard(modifier: Modifier = Modifier) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "09:00",
+                    text = schedule.time, // ✅ Ambil time dari ScheduleData
                     color = Color(0xff4a628a),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            // ✅ Switch untuk on/off jadwal
             Switch(
                 checked = isActive,
                 onCheckedChange = { isActive = it },
@@ -657,6 +671,8 @@ fun ScheduleCard(modifier: Modifier = Modifier) {
         }
     }
 }
+
+
 @SuppressLint("DefaultLocale")
 @Composable
 fun CustomTimePicker(

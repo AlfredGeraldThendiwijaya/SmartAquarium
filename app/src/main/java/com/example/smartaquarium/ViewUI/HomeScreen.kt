@@ -36,23 +36,31 @@ import com.example.smartaquarium.ui.theme.navyblue
 import com.example.smartaquarium.ui.theme.skyBlue
 import com.google.firebase.auth.FirebaseAuth
 import androidx.activity.compose.BackHandler
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
+fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewModel()) {
     BackHandler {
         // Langsung exit aplikasi kalau di HomeScreen
         (navController.context as? Activity)?.finish()
     }
+
     val user = FirebaseAuth.getInstance().currentUser
     val userPhotoUrl = user?.photoUrl?.toString() ?: "https://via.placeholder.com/100"
-    val aquariumList by viewModel.aquariums.collectAsState() // Gunakan collectAsState untuk mendapatkan update otomatis
+    val aquariumList = viewModel.aquariums
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
+        Log.d("HomeScreen", "LaunchedEffect dipanggil")
         viewModel.fetchAquariums() // Ambil data saat pertama kali masuk ke layar
     }
+    Log.d("UI", "Aquarium List di UI: $aquariumList")
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -72,21 +80,22 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                         .scale(1.2f)
                         .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp))
                 )
-                // Pindahkan IconButton ke dalam Box ini
+
                 IconButton(
                     onClick = { navController.navigate("setting") },
                     modifier = Modifier
-                        .align(Alignment.TopEnd) // Pastikan ada di sudut kanan atas
-                        .padding(top = 28.dp, end = 16.dp) // Kasih padding biar nggak terlalu mepet
+                        .align(Alignment.TopEnd)
+                        .padding(top = 28.dp, end = 16.dp)
                 ) {
                     Image(
                         painter = rememberAsyncImagePainter(model = userPhotoUrl),
                         contentDescription = "User Profile",
                         modifier = Modifier
                             .size(100.dp)
-                            .clip(RoundedCornerShape(50.dp)), // Biar bentuknya bulat
+                            .clip(RoundedCornerShape(50.dp))
                     )
                 }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -96,11 +105,10 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 ) {
                     InfoCardContainer(
                         onAddAquarium = { name, serial ->
-                            viewModel.addAquarium(name,serial) // Simpan ke ViewModel
+                            viewModel.addAquarium(name, serial)
                         },
                         modifier = Modifier.widthIn(max = 350.dp),
                         aquariumCount = aquariumList.size
-
                     )
                 }
             }
@@ -132,56 +140,73 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 }
             }
 
-            if (aquariumList.isEmpty()) {
+            if (isLoading) {
+                // 🔥 Menampilkan loading saat sedang fetch data
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.akuarium_not_found),
-                        contentDescription = "akuarium gada",
-                        modifier = Modifier.padding(top = 50.dp)
-                    )
+                    CircularProgressIndicator(color = navyblue)
                     Text(
-                        text = "Tidak ada akuarium",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = navyblue,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp)
-                            .wrapContentWidth(Alignment.CenterHorizontally)
-                    )
-                    Text(
-                        text = "Tambahkan akuarium ke list terlebih dahulu",
-                        fontSize = 16.sp,
+                        text = "Loading...",
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
-                        color = darkBlue,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp)
-                            .wrapContentWidth(Alignment.CenterHorizontally)
+                        color = navyblue,
+                        modifier = Modifier.padding(top = 16.dp)
                     )
                 }
             } else {
-                // Jika ada data, tampilkan dalam LazyColumn
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 16.dp)
-                        .offset(y = (-30).dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    items(aquariumList) { aquarium ->
-                        Log.d("UI", "Aquarium List in UI: $aquariumList")
-                        ListAquariumCard(
-                            name = aquarium.unitName,
-                            onClick = {
-                                navController.navigate("detail/${aquarium.unitName}/${aquarium.unitId}") // ✅ Gunakan unitId sebagai serial
-                            }
+                if (aquariumList.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.akuarium_not_found),
+                            contentDescription = "akuarium gada",
+                            modifier = Modifier.padding(top = 50.dp)
                         )
+                        Text(
+                            text = "Tidak ada akuarium",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = navyblue,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp)
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                        )
+                        Text(
+                            text = "Tambahkan akuarium ke list terlebih dahulu",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = darkBlue,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp)
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 16.dp)
+                            .offset(y = (-30).dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        items(aquariumList) { aquarium ->
+                            Log.d("UI", "Aquarium List in UI: $aquariumList")
+                            ListAquariumCard(
+                                name = aquarium.unitName,
+                                onClick = {
+                                    navController.navigate("detail/${aquarium.unitName}/${aquarium.unitId}")
+                                }
+                            )
+                        }
                     }
                 }
             }

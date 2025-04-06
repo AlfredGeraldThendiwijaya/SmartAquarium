@@ -1,6 +1,8 @@
 package com.example.smartaquarium.navigation
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -18,6 +20,7 @@ import com.example.smartaquarium.ViewUI.LoginScreen
 import com.example.smartaquarium.ViewUI.SplashScreen
 import com.example.smartaquarium.ViewUI.TermsAndConditionsScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("ViewModelConstructorInComposable")
 @Composable
 fun NavigationApp() {
@@ -40,11 +43,16 @@ fun NavigationApp() {
 
             DetailScreen(navController = navController, aquariumName = name, aquariumSerial = serial)
         }
+        composable(route = "schedule/{serial}",){
+            backStackEntry ->
+            val serial = backStackEntry.arguments?.getString("serial") ?: ""
+            ScheduleScreen(navController = navController, aquariumSerial = serial)
+        }
         composable(Screen.setting.route){
             SettingScreen(navController = navController)
         }
         composable(Screen.schedule.route){
-            ScheduleScreen(navController = navController)
+            ScheduleScreen(navController = navController,aquariumSerial = "")
         }
         composable(Screen.termsandcondition.route){
             TermsAndConditionsScreen(navController = navController)

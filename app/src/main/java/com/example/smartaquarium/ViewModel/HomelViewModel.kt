@@ -1,6 +1,7 @@
 package com.example.smartaquarium.ViewModel
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartaquarium.network.AddUnitRequest
@@ -11,6 +12,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -25,33 +28,54 @@ data class Aquarium(
 
 
 
-class HomeViewModel : ViewModel() {
-    private val _aquariums = MutableStateFlow<List<Aquarium>>(emptyList()) // Gunakan StateFlow
-    val aquariums: StateFlow<List<Aquarium>> get() = _aquariums
-    init {
-        fetchAquariums() // Auto-fetch saat ViewModel dibuat
-    }
-    fun fetchAquariums() {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val dbRef = FirebaseDatabase.getInstance().getReference("users/$userId/units")
+    class HomeViewModel : ViewModel() {
+        private val _aquariums = mutableStateListOf<Aquarium>() // 🔥 Ganti ke StateList
+        val aquariums: List<Aquarium> get() = _aquariums
 
-        dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val aquariumList = mutableListOf<Aquarium>()
-                for (childSnapshot in snapshot.children) {
-                    Log.d("Firebase", "Data: ${childSnapshot.value}")
-                    val aquarium = childSnapshot.getValue(Aquarium::class.java)
-                    aquarium?.let { aquariumList.add(it) }
-                }
-                _aquariums.value = aquariumList
-                Log.d("ViewModel", "Aquarium list updated: $aquariumList")
-            }
+        private val _isLoading = MutableStateFlow(false)
+        val isLoading: StateFlow<Boolean> = _isLoading
 
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("Firebase", "Error fetching data: ${error.message}")
+        init {
+            Log.d("ViewModel", "HomeViewModel DI-INISIALISASI")
+            fetchAquariums()
+        }
+
+        fun fetchAquariums() {
+            Log.d("ViewModel", "fetchAquariums() dipanggil")
+            viewModelScope.launch(Dispatchers.IO) {
+                _isLoading.value = true
+
+                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+                val dbRef = FirebaseDatabase.getInstance().getReference("users/$userId/units")
+
+                dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val aquariumSet = mutableSetOf<Aquarium>() // 🔥 Pakai Set untuk menghindari duplikasi
+
+                        snapshot.children.forEach { data ->
+                            val aquarium = data.getValue(Aquarium::class.java)
+                            if (aquarium != null) aquariumSet.add(aquarium)
+                        }
+
+                        Log.d("Firebase", "Data diterima: $aquariumSet") // Debug
+
+                        viewModelScope.launch(Dispatchers.Main) {
+                            _aquariums.clear() // Pastikan list dikosongkan dulu
+                            _aquariums.addAll(aquariumSet)
+                            _isLoading.value = false
+                            Log.d("ViewModel", "Aquarium list diperbarui: $_aquariums")
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("Firebase", "Error fetching data: ${error.message}")
+                        viewModelScope.launch(Dispatchers.Main) {
+                            _isLoading.value = false
+                        }
+                    }
+                })
             }
-        })
-    }
+        }
 
 
     fun addAquarium(name: String, serial: String) {
@@ -61,7 +85,7 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 RetrofitInstance.apiService.addAquarium(request)
-                fetchAquariums() // Refresh daftar akuarium setelah tambah unit
+                delay(1000) // ✅ Tunggu biar Firebase update otomatis
             } catch (e: Exception) {
                 println("Error adding aquarium: ${e.message}")
             }

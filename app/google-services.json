@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "393789552767-srhdrvgkq3l1sp744p6mgdan92smbcnd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smartaquarium",
+            "certificate_hash": "304a9281e34d293ab3c20f75340d7c66c61c0dae"
+          }
+        },
+        {
           "client_id": "393789552767-kcjcgr18a76gvl0vrh5a7kl46ncgb5rg.apps.googleusercontent.com",
           "client_type": 3
         }

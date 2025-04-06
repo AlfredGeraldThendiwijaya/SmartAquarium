@@ -143,7 +143,7 @@ fun DetailScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { navController.navigate("schedule") },
+                onClick = { navController.navigate("schedule/${aquariumSerial}") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
