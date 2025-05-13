@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavController
 import com.chargemap.compose.numberpicker.NumberPicker
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.Aquarium
@@ -429,7 +430,9 @@ fun ListAquariumCard(
 @Composable
 fun DetailInfoCard(
     name: String,
-    id: String
+    id: String,
+    navController: NavController,
+    aquariumSerial: String
 ) {
     Box(
         modifier = Modifier
@@ -444,10 +447,10 @@ fun DetailInfoCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxSize()
         ) {
-            // Gambar
+            // Gambar akuarium
             Image(
                 painter = painterResource(id = R.drawable.fish_tank),
-                contentDescription = "fish-tank_2173805 2",
+                contentDescription = "fish tank",
                 modifier = Modifier
                     .size(100.dp)
                     .clip(RoundedCornerShape(8.dp))
@@ -473,8 +476,23 @@ fun DetailInfoCard(
                 )
             }
         }
+
+        // 🔍 Button Camera di pojok kanan bawah
+        IconButton(
+            onClick = { navController.navigate("detect_fish/${aquariumSerial}") },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(40.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.camera_fish),
+                contentDescription = "Deteksi Ikan",
+                tint = Color.Unspecified // Biar tetap pakai warna aslinya
+            )
+        }
     }
 }
+
 
 data class StatusInfo(
     val gradientColors: List<Color>,
@@ -563,39 +581,70 @@ fun LineChartComponent(dataPoints: List<Entry>) {
 @SuppressLint("DefaultLocale")
 @Composable
 fun GaugeMeterWithStatus(
-    percentage: Int,
     ph: Double,
     temperature: Double,
     pph: Double,
-    ntu:Double,
-    viewModel: DetailViewModel, // Ambil ViewModel
+    ntu: Double,
+    viewModel: DetailViewModel,
     modifier: Modifier = Modifier
 ) {
-    val turbidity by viewModel.turbidity.collectAsState() // Mengamati perubahan NTU dari ViewModel
-    val temperature by viewModel.temperature.collectAsState()
-    val ph by viewModel.ph.collectAsState()
+    val turbidity by viewModel.turbidity.collectAsState()
+    val temperatureState by viewModel.temperature.collectAsState()
+    val phState by viewModel.ph.collectAsState()
     val tds by viewModel.tds.collectAsState()
-    val sweepAngle = (percentage / 100f) * 250f // 250° agar lebih dinamis
-    val backgroundAngle = 250f
 
-    val (gradientColors, statusText, statusColor) = when {
-        percentage < 50 -> Triple(
-            listOf(Color(0xFF4CAF50), Color(0xFFFFC107)),
-            "Aman",
-            Color(0xFF4A628A)
-        ) // Hijau ke Kuning
-        percentage in 50..79 -> Triple(
-            listOf(Color(0xFFFFC107), Color(0xFFFF9800)),
-            "Beresiko",
-            Color(0xFF4A628A)
-        ) // Kuning ke Oranye
-        else -> Triple(
-            listOf(Color(0xFFFF9800), Color(0xFFD32F2F)),
-            "Berbahaya",
-            Color.Red
-        ) // Oranye ke Merah
+    // === Fungsi perhitungan skor sesuai logika Python ===
+    fun scorePh(ph: Double): Double {
+        return when {
+            ph < 5.5 || ph > 7.5 -> 0.0
+            ph < 6.0 -> (ph - 5.5) * 200
+            ph > 7.0 -> (7.5 - ph) * 200
+            else -> 100.0
+        }
     }
 
+    fun scoreTds(tds: Double): Double {
+        return when {
+            tds > 180 -> 0.0
+            tds <= 150 -> 100.0
+            else -> (180 - tds) * (100.0 / 30.0)
+        }
+    }
+
+    fun scoreTemp(temp: Double): Double {
+        return when {
+            temp < 25 || temp > 31 -> 0.0
+            temp < 27 -> (temp - 25) * 50
+            temp > 29 -> (31 - temp) * 50
+            else -> 100.0
+        }
+    }
+
+    val phScore = scorePh(ph)
+    val tdsScore = scoreTds(pph)
+    val tempScore = scoreTemp(temperature)
+    val avgScore = (phScore + tdsScore + tempScore) / 3
+    val percentage = avgScore.toInt()
+
+    val (gradientColors, statusText, statusColor) = when {
+        avgScore >= 80 -> Triple(
+            listOf(Color(0xFF4CAF50), Color(0xFF81C784)), // Hijau ke Hijau Muda
+            "Aman",
+            Color(0xFF4CAF50)
+        )
+        avgScore >= 50 -> Triple(
+            listOf(Color(0xFFFFC107), Color(0xFFFF9800)), // Kuning ke Oranye
+            "Beresiko",
+            Color(0xFFFFA000)
+        )
+        else -> Triple(
+            listOf(Color(0xFFFF9800), Color(0xFFD32F2F)), // Oranye ke Merah
+            "Berbahaya",
+            Color.Red
+        )
+    }
+
+    // === UI tetap seperti sebelumnya ===
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -610,7 +659,6 @@ fun GaugeMeterWithStatus(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // Gauge Meter
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -620,19 +668,22 @@ fun GaugeMeterWithStatus(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray,
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier
+                        .align(Alignment.Start)
                         .padding(bottom = 24.dp)
                 )
 
                 Box(contentAlignment = Alignment.Center) {
+                    val sweepAngle = (percentage / 100f) * 250f
+
+
                     Canvas(modifier = Modifier.size(120.dp)) {
                         val strokeWidth = 18.dp.toPx()
                         val startAngle = 145f
-
                         drawArc(
                             color = Color.LightGray.copy(alpha = 0.3f),
                             startAngle = startAngle,
-                            sweepAngle = backgroundAngle,
+                            sweepAngle = 250f,
                             useCenter = false,
                             style = Stroke(strokeWidth, cap = StrokeCap.Round)
                         )
@@ -646,7 +697,6 @@ fun GaugeMeterWithStatus(
                         )
                     }
 
-                    // Persentase di tengah
                     Text(
                         text = "$percentage%",
                         fontSize = 36.sp,
@@ -655,7 +705,6 @@ fun GaugeMeterWithStatus(
                     )
                 }
 
-                // Status Air
                 Text(
                     text = statusText,
                     fontSize = 20.sp,
@@ -664,16 +713,17 @@ fun GaugeMeterWithStatus(
                     textAlign = TextAlign.Center
                 )
             }
+
             Spacer(modifier = Modifier.width(16.dp))
-            // Status Parameter
+
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 16.dp)
             ) {
                 val formattedTurbidity = turbidity?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
-                val formattedTemperature = temperature?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
-                val formattedPh = ph?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
+                val formattedTemperature = temperatureState?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
+                val formattedPh = phState?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
                 val formattedTds = tds?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
                 ParameterItem(R.drawable.suhu, "Suhu", "$formattedTemperature °C")
                 ParameterItem(R.drawable.ph, "pH", "$formattedPh pH")
@@ -683,6 +733,7 @@ fun GaugeMeterWithStatus(
         }
     }
 }
+
 @Composable
 fun InfoItem(iconResId: Int, label: String, description: String) {
     Row(

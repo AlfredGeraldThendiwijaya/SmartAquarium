@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material)
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.30.1")
 
     // Grafik dan Chart
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")

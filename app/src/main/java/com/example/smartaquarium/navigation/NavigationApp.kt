@@ -13,6 +13,7 @@ import com.example.smartaquarium.ViewUI.HomeScreen
 import androidx.compose.ui.Modifier
 import com.example.smartaquarium.ViewModel.HomeViewModel
 import com.example.smartaquarium.ViewUI.DetailScreen
+import com.example.smartaquarium.ViewUI.DetectScreen
 import com.example.smartaquarium.ViewUI.ScheduleScreen
 import com.example.smartaquarium.ViewUI.SettingScreen
 import com.example.smartaquarium.ViewUI.LoginScreen
@@ -56,6 +57,11 @@ fun NavigationApp() {
         }
         composable(Screen.termsandcondition.route){
             TermsAndConditionsScreen(navController = navController)
+        }
+        composable(route = "detect_fish/{serial}"){
+            backStackEntry ->
+            val serial = backStackEntry.arguments?.getString("serial") ?: ""
+            DetectScreen(navController = navController, aquariumSerial = serial)
         }
     }
 }

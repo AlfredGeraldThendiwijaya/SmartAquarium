@@ -187,15 +187,20 @@ class DetailViewModel : ViewModel() {
     }
 
     fun startRealtimeUpdates(unitId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            while (true) { // Loop terus
-                fetchTurbidity(unitId) // Ambil data NTU
-                fetchTemperature(unitId) // Ambil data suhu
-                fetchPh(unitId)
-                fetchTds(unitId)
-                delay(3600000) // Tunggu 1 jam sebelum refresh lagi
-            }
-        }
+        // Dipanggil sekali waktu LaunchedEffect di awal
+        fetchTurbidity(unitId)
+        fetchTemperature(unitId)
+        fetchPh(unitId)
+        fetchTds(unitId)
     }
+
+    fun refreshSensorData(unitId: String) {
+        // Sama, tapi dipicu dari swipe-to-refresh
+        fetchTurbidity(unitId)
+        fetchTemperature(unitId)
+        fetchPh(unitId)
+        fetchTds(unitId)
+    }
+
 
 }
