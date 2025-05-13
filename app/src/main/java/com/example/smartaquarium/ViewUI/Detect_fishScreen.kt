@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.graphics.asImageBitmap
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import androidx.activity.result.launch
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,20 +19,26 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.smartaquarium.R
+import com.example.smartaquarium.ViewModel.DetectViewModel
 import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.navyblue
 
@@ -37,6 +46,14 @@ import com.example.smartaquarium.ui.theme.navyblue
 fun DetectScreen(navController: NavController, aquariumSerial: String) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val context = LocalContext.current
+
+    val viewModel: DetectViewModel = viewModel()
+    val latestImageUrl by viewModel.latestImageUrl.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    var showError by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Ambil dari galeri
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -54,138 +71,178 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
         selectedImageUri = null
     }
 
+    LaunchedEffect(showError) {
+        if (showError) {
+            snackbarHostState.showSnackbar("❌ Gagal mengambil gambar dari kamera wireless. Pastikan ESP32-CAM menyala.")
+            showError = false
+        }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = accentMint
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // ===== Header =====
-            Row(
+        Box {
+            Column(
                 modifier = Modifier
-                    .padding(top = 50.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowLeft,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = navyblue
+                // ===== Header =====
+                Row(
+                    modifier = Modifier
+                        .padding(top = 50.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.Rounded.KeyboardArrowLeft,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = navyblue
+                        )
+                    }
+                    Text(
+                        text = "Deteksi Anomali",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = navyblue
                     )
                 }
-                Text(
-                    text = "Deteksi Anomali",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = navyblue
-                )
-            }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // ===== Input Options =====
-            Text(
-                text = "Pilih Metode Input Gambar",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = navyblue,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            InputOption(
-                iconRes = R.drawable.gallery_ic,
-                label = "Ambil dari Galeri",
-                onClick = { galleryLauncher.launch("image/*") }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            InputOption(
-                iconRes = R.drawable.camera_ic,
-                label = "Ambil dari Kamera",
-                onClick = { cameraLauncher.launch() }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            InputOption(
-                iconRes = R.drawable.wireless_cam_ic,
-                label = "Kamera Wireless (Coming Soon)",
-                onClick = { },
-                enabled = false
-            )
-
-            // ===== Preview Section =====
-            val hasImage = selectedImageUri != null || capturedBitmap != null
-            if (hasImage) {
                 Spacer(modifier = Modifier.height(32.dp))
-                Text("Preview Gambar yang Dipilih:", color = navyblue)
-                Box(
+
+                // ===== Input Options =====
+                Text(
+                    text = "Pilih Metode Input Gambar",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = navyblue,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                InputOption(
+                    iconRes = R.drawable.gallery_ic,
+                    label = "Ambil dari Galeri",
+                    onClick = { galleryLauncher.launch("image/*") }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                InputOption(
+                    iconRes = R.drawable.camera_ic,
+                    label = "Ambil dari Kamera",
+                    onClick = { cameraLauncher.launch() }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                InputOption(
+                    iconRes = R.drawable.wireless_cam_ic,
+                    label = if (isLoading) "Mengambil dari Kamera Wireless..." else "Kamera Wireless",
+                    onClick = {
+                        viewModel.triggerWirelessCamera(
+                            unitId = aquariumSerial,
+                            onFailure = { showError = true }
+                        )
+                    },
+                    enabled = !isLoading
+                )
+
+                // ===== Preview Section =====
+                val hasImage = selectedImageUri != null || capturedBitmap != null || latestImageUrl != null
+                if (hasImage) {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Text("Preview Gambar yang Dipilih:", color = navyblue)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .padding(top = 8.dp)
+                    ) {
+                        when {
+                            selectedImageUri != null -> {
+                                Image(
+                                    painter = rememberAsyncImagePainter(selectedImageUri),
+                                    contentDescription = "Preview",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            capturedBitmap != null -> {
+                                Image(
+                                    bitmap = capturedBitmap!!.asImageBitmap(),
+                                    contentDescription = "Preview",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            latestImageUrl != null -> {
+                                val imageKey = remember(latestImageUrl) { System.currentTimeMillis().toString() }
+
+                                Image(
+                                    painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data("${latestImageUrl}&key=$imageKey") // trik supaya dianggap beda
+                                            .memoryCachePolicy(CachePolicy.DISABLED)
+                                            .diskCachePolicy(CachePolicy.DISABLED)
+                                            .build()
+                                    ),
+                                    contentDescription = "Wireless Preview",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit
+                                )
+
+                            }
+                        }
+
+                        IconButton(
+                            onClick = {
+                                selectedImageUri = null
+                                capturedBitmap = null
+                                viewModel.clearWirelessImage()
+                            },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Hapus gambar",
+                                tint = Color.Red,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.White.copy(alpha = 0.8f), shape = CircleShape)
+                            )
+                        }
+                    }
+                }
+
+                // ===== Analisis Button =====
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = { /* TODO: Analisis logic */ },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .padding(top = 8.dp)
+                        .padding(vertical = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = navyblue),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    if (selectedImageUri != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(selectedImageUri),
-                            contentDescription = "Preview",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
-                        )
-                    } else if (capturedBitmap != null) {
-                        Image(
-                            bitmap = capturedBitmap!!.asImageBitmap(),
-                            contentDescription = "Preview",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            selectedImageUri = null
-                            capturedBitmap = null
-                        },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp)
-                            .size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = "Hapus gambar",
-                            tint = Color.Red,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.White.copy(alpha = 0.8f), shape = CircleShape)
-                        )
-                    }
+                    Text("Analisis Sekarang", color = Color.White, fontSize = 16.sp)
                 }
             }
 
-            // ===== Analisis Button =====
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = { /* TODO: Analisis logic */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = navyblue),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Analisis Sekarang", color = Color.White, fontSize = 16.sp)
-            }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
     }
 }
