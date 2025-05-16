@@ -1,21 +1,17 @@
-// final versi: HomeScreen hanya refresh manual (swipe), tidak auto-fetch saat balik dari DetailScreen
 package com.example.smartaquarium.ViewUI
 
 import android.app.Activity
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,13 +20,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.smartaquarium.Component.InfoCardContainer
+import com.example.smartaquarium.Component.InfoCard
 import com.example.smartaquarium.Component.ListAquariumCard
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.HomeViewModel
-import com.example.smartaquarium.ui.theme.accentMint
-import com.example.smartaquarium.ui.theme.darkBlue
-import com.example.smartaquarium.ui.theme.navyblue
+import com.example.smartaquarium.ui.theme.*
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.google.firebase.auth.FirebaseAuth
@@ -46,47 +40,32 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
     var showDialog by remember { mutableStateOf(false) }
     var selectedUnitId by remember { mutableStateOf<String?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    val displayName = user?.displayName?.split(" ")?.firstOrNull() ?: "Guest"
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = accentMint
-    ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isLandscape = maxWidth > maxHeight
-
-            SwipeRefresh(
-                state = rememberSwipeRefreshState(isRefreshing),
-                onRefresh = {
-                    isRefreshing = true
-                    viewModel.fetchAquariums()
-                    isRefreshing = false
-                }
+    Surface(modifier = Modifier.fillMaxSize(), color = softWhite) {
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(isRefreshing),
+            onRefresh = {
+                isRefreshing = true
+                viewModel.fetchAquariums()
+                isRefreshing = false
+            }
+        ) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState)
-                ) {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Image(
-                            painter = painterResource(id = R.drawable.discus_dashboard),
-                            contentDescription = "discus-fish-tank-set-up",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(16f / 9f)
-                                .align(Alignment.TopCenter)
-                                .scale(1.2f)
-                                .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-
-                        IconButton(
-                            onClick = { navController.navigate("setting") },
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(top = 28.dp, end = 16.dp)
-                        ) {
+                // ✅ Header user (span 2 kolom)
+                item(span = { GridItemSpan(2) }) {
+                    Column(
+                        modifier = Modifier.padding(top = 20.dp)
+                    ) {
+                        IconButton(onClick = { navController.navigate("setting") }) {
                             Image(
                                 painter = rememberAsyncImagePainter(model = userPhotoUrl),
                                 contentDescription = "User Profile",
@@ -95,52 +74,54 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
                                     .clip(RoundedCornerShape(50))
                             )
                         }
+                        Column(modifier = Modifier.padding(top = 10.dp)) {
+                            Text(
+                                text = "Good Day. $displayName!",
+                                fontSize = 20.sp,
+                                color = darkgray,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Manage Your Discus",
+                                fontSize = 14.sp,
+                                color = mediumgray,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
 
-                        Box(
+                        Spacer(modifier = Modifier.height(16.dp))
+                        InfoCard(aquariumCount = aquariumList.size)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 24.dp)
-                                .align(Alignment.TopCenter)
-                                .offset(y = if (isLandscape) 60.dp else 140.dp)
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            InfoCardContainer(
-                                onAddAquarium = { name, serial -> viewModel.addAquarium(name, serial) },
-                                modifier = Modifier.widthIn(min = 250.dp, max = 360.dp),
-                                aquariumCount = aquariumList.size
+                            Text(
+                                text = "List Aquarium",
+                                fontSize = 18.sp,
+                                color = darkgray,
+                                fontWeight = FontWeight.SemiBold
                             )
+                            IconButton(onClick = { viewModel.sortAquariumsByName() }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.sorting),
+                                    contentDescription = "Sort",
+                                    tint = darkgray,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(if (isLandscape) 32.dp else 100.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "List Aquarium",
-                            fontSize = 24.sp,
-                            color = navyblue,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { viewModel.sortAquariumsByName() }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.sorting),
-                                contentDescription = "Sort",
-                                tint = navyblue,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    if (isLoading) {
+                // ✅ Loading
+                if (isLoading) {
+                    item(span = { GridItemSpan(2) }) {
                         Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             CircularProgressIndicator(color = navyblue)
@@ -148,14 +129,18 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
                                 text = "Loading...",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = navyblue,
+                                color = darkgray,
                                 modifier = Modifier.padding(top = 16.dp)
                             )
                         }
-                    } else if (aquariumList.isEmpty()) {
+                    }
+                }
+
+                // ✅ Kosong
+                if (!isLoading && aquariumList.isEmpty()) {
+                    item(span = { GridItemSpan(2) }) {
                         Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Image(
@@ -167,64 +152,77 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
                                 text = "Tidak ada akuarium",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = navyblue,
+                                color = darkgray,
                                 modifier = Modifier.padding(top = 10.dp)
                             )
                             Text(
                                 text = "Tambahkan akuarium ke list terlebih dahulu",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = darkBlue,
+                                color = darkgray,
                                 modifier = Modifier.padding(top = 10.dp)
                             )
                         }
-                    } else {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            aquariumList.forEach { aquarium ->
-                                ListAquariumCard(
-                                    name = aquarium.unitName,
-                                    unitId = aquarium.unitId,
-                                    percentage = 50,
-                                    statusText = "Beresiko",
-                                    onClick = {
-                                        navController.navigate("detail/${aquarium.unitName}/${aquarium.unitId}")
-                                    },
-                                    onDelete = { unitId ->
-                                        selectedUnitId = unitId
-                                        showDialog = true
-                                    }
-                                )
-                            }
-                        }
                     }
                 }
-            }
 
-            if (showDialog && selectedUnitId != null) {
-                AlertDialog(
-                    onDismissRequest = { showDialog = false },
-                    title = { Text("Konfirmasi Hapus") },
-                    text = { Text("Yakin ingin menghapus aquarium ini? Tindakan ini tidak bisa dibatalkan.") },
-                    confirmButton = {
-                        TextButton(onClick = {
+                // ✅ List Aquarium
+                items(aquariumList) { aquarium ->
+                    ListAquariumCard(
+                        modifier = Modifier.aspectRatio(1f),
+                        name = aquarium.unitName,
+                        unitId = aquarium.unitId,
+                        percentage = 50,
+                        statusText = "Beresiko",
+                        onClick = {
+                            navController.navigate("detail/${aquarium.unitName}/${aquarium.unitId}")
+                        },
+                        onDelete = { unitId ->
+                            selectedUnitId = unitId
+                            showDialog = true
+                        }
+                    )
+                }
+            }
+        }
+
+        if (showDialog && selectedUnitId != null) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = {
+                    Text("Konfirmasi Hapus", color = darkgray)
+                },
+                text = {
+                    Text(
+                        "Yakin ingin menghapus aquarium ini? Tindakan ini tidak bisa dibatalkan.",
+                        color = darkgray
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
                             val userId = FirebaseAuth.getInstance().currentUser?.uid
                             if (userId != null && selectedUnitId != null) {
                                 viewModel.deleteSchedule(userId, selectedUnitId!!)
                             }
                             showDialog = false
-                        }) { Text("Hapus") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDialog = false }) { Text("Batal") }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = navyblue)
+                    ) {
+                        Text("Hapus")
                     }
-                )
-            }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDialog = false },
+                        colors = ButtonDefaults.textButtonColors(contentColor = navyblue)
+                    ) {
+                        Text("Batal")
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(12.dp)
+            )
         }
     }
 }

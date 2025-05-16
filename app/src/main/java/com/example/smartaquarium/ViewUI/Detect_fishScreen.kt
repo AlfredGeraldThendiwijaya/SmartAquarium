@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -77,6 +78,15 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
             showError = false
         }
     }
+    var showInfo by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showInfo) {
+        if (showInfo) {
+            snackbarHostState.showSnackbar("ℹ️ Jika gambar terlihat sama terus, pastikan ESP32-CAM dalam keadaan menyala dan koneksi anda lancar.")
+            showInfo = false
+        }
+    }
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -95,22 +105,34 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                     modifier = Modifier
                         .padding(top = 50.dp)
                         .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Rounded.KeyboardArrowLeft,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = navyblue
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                Icons.Rounded.KeyboardArrowLeft,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = navyblue
+                            )
+                        }
+                        Text(
+                            text = "Deteksi Anomali",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = navyblue
                         )
                     }
-                    Text(
-                        text = "Deteksi Anomali",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = navyblue
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Rounded.Info,
+                        contentDescription = "Info",
+                        tint = navyblue,
+                        modifier = Modifier
+                            .clickable { showInfo = true }
                     )
+
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -188,7 +210,7 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                                 Image(
                                     painter = rememberAsyncImagePainter(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data("${latestImageUrl}&key=$imageKey") // trik supaya dianggap beda
+                                            .data("${latestImageUrl}&key=$imageKey")
                                             .memoryCachePolicy(CachePolicy.DISABLED)
                                             .diskCachePolicy(CachePolicy.DISABLED)
                                             .build()
@@ -197,7 +219,6 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Fit
                                 )
-
                             }
                         }
 

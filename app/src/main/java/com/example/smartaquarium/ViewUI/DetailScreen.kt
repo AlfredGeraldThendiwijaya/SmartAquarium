@@ -204,7 +204,7 @@ fun DetailScreen(
 
                 Button(
                     onClick = { navController.navigate("schedule/${aquariumSerial}") },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
+                    colors = ButtonDefaults.buttonColors(containerColor = navyblue),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -226,14 +226,20 @@ fun DetailScreen(
             AlertDialog(
                 onDismissRequest = { showDialog.value = false },
                 confirmButton = {
-                    TextButton(onClick = { showDialog.value = false }) {
+                    TextButton(
+                        onClick = { showDialog.value = false },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = navyblue // Warna teks tombol
+                        )
+                    ) {
                         Text("Tutup")
                     }
                 },
                 title = {
                     Text(
                         text = "Penjelasan Indikator",
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = navyblue // warna judul
                     )
                 },
                 text = {
@@ -243,11 +249,14 @@ fun DetailScreen(
                         InfoItem(R.drawable.suhu, "Suhu", "Menunjukkan suhu air dalam akuarium.")
                         InfoItem(R.drawable.ph, "pH", "Mengukur tingkat keasaman air.")
                         InfoItem(R.drawable.turbidity, "Turbidity", "Menunjukkan tingkat kejernihan air (NTU).")
-                        InfoItem(R.drawable.tds, "TDS", "Menunjukkan jumlah padatan terlarut (ppm).")
+                        InfoItem(R.drawable.ppm, "TDS", "Menunjukkan jumlah padatan terlarut (ppm).")
                         InfoItem(R.drawable.risk, "Status Resiko", "Menunjukkan status Aman, Beresiko, atau Berbahaya.")
                     }
-                }
+                },
+                containerColor = Color.White, // latar belakang dialog
+                shape = RoundedCornerShape(12.dp) // opsional: biar sudut lembut
             )
         }
+
     }
 }

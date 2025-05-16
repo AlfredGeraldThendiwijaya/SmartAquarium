@@ -61,6 +61,13 @@ fun BottomSheetContent(onDismiss: () -> Unit, onTimeSet: (String) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = navyblue)
+            ) {
+                Text("Batal", color = Color.White)
+            }
+            Button(
                 onClick = {
                     val formattedTime = String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
                     onTimeSet(formattedTime)
@@ -70,14 +77,6 @@ fun BottomSheetContent(onDismiss: () -> Unit, onTimeSet: (String) -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = navyblue)
             ) {
                 Text("OK", color = Color.White)
-            }
-
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = navyblue)
-            ) {
-                Text("Batal", color = Color.White)
             }
         }
     }
@@ -165,23 +164,36 @@ fun ScheduleScreen(navController: NavController, aquariumSerial: String, viewMod
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Hapus Jadwal") },
-            text = { Text("Apakah Anda yakin ingin menghapus jadwal ini?") },
+            containerColor = Color.White, // ⬅️ Explicit putih
+            title = {
+                Text(
+                    "Hapus Jadwal",
+                    fontWeight = FontWeight.Bold,
+                    color = navyblue
+                )
+            },
+            text = {
+                Text(
+                    "Apakah Anda yakin ingin menghapus jadwal ini?",
+                    color = Color.Black
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     selectedScheduleId?.let { viewModel.deleteSchedule(aquariumSerial, it) }
                     showDialog = false
                 }) {
-                    Text("Hapus", color = Color.Red)
+                    Text("Hapus", color = navyblue)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("Batal")
+                    Text("Batal", color = navyblue)
                 }
             }
         )
     }
+
 
     if (showBottomSheet) {
         ModalBottomSheet(

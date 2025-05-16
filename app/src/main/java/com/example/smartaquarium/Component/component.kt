@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,7 +26,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -50,7 +54,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -71,6 +77,10 @@ import com.example.smartaquarium.ViewModel.Aquarium
 import com.example.smartaquarium.ViewModel.DetailViewModel
 import com.example.smartaquarium.network.ScheduleData
 import com.example.smartaquarium.network.deleteUnit
+import com.example.smartaquarium.ui.modifier.neumorphicSurface
+import com.example.smartaquarium.ui.theme.darkgray
+import com.example.smartaquarium.ui.theme.navyblue
+import com.example.smartaquarium.ui.theme.softWhite
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
@@ -129,7 +139,119 @@ fun AddAquariumDialog(
         }
     )
 }
+@Composable
+fun InfoCardContainerOld(
+    onAddAquarium: (String, String) -> Unit,
+    aquariumCount: Int,
+    modifier: Modifier = Modifier
+) {
+    var isDialogOpen by remember { mutableStateOf(false) }
+    var aquariumName by remember { mutableStateOf("") }
+    var serialNumber by remember { mutableStateOf("") }
+    var isNameError by remember { mutableStateOf(false) }
+    var isSerialError by remember { mutableStateOf(false) }
+    val user = FirebaseAuth.getInstance().currentUser
 
+    Box(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        InfoCard(
+            modifier = Modifier.align(Alignment.Center),
+            aquariumCount = aquariumCount
+        )
+
+        Box(
+            modifier = Modifier
+                .size(140.dp)
+                .align(Alignment.TopEnd)
+                .offset(y = (-30).dp, x = (-15).dp)
+                .zIndex(1f)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
+                    isDialogOpen = true
+                }
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.add_device),
+                contentDescription = "Tambah Akuarium",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+
+    if (isDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isDialogOpen = false },
+            title = { Text("Tambah Akuarium") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = aquariumName,
+                        onValueChange = {
+                            aquariumName = it
+                            isNameError = it.isBlank()
+                        },
+                        label = { Text("Nama Akuarium") },
+                        placeholder = { Text("Masukkan nama akuarium") },
+                        isError = isNameError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (isNameError) {
+                        Text(
+                            text = "Nama akuarium tidak boleh kosong",
+                            color = Color.Red,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = serialNumber,
+                        onValueChange = {
+                            serialNumber = it
+                            isSerialError = it.isBlank()
+                        },
+                        label = { Text("Serial Number") },
+                        placeholder = { Text("Masukkan serial number") },
+                        isError = isSerialError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (isSerialError) {
+                        Text(
+                            text = "Serial number tidak boleh kosong",
+                            color = Color.Red,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isNameError = aquariumName.isBlank()
+                        isSerialError = serialNumber.isBlank()
+                        if (!isNameError && !isSerialError && user != null) {
+                            postAquariumData(user.uid, serialNumber, aquariumName) {
+                                onAddAquarium(aquariumName, serialNumber)
+                                isDialogOpen = false
+                            }
+                        }
+                    }
+                ) {
+                    Text("Tambah")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isDialogOpen = false }) {
+                    Text("Batal")
+                }
+            },
+            containerColor = Color.White,
+            textContentColor = Color.Black
+        )
+    }
+}
 
 @Composable
 fun InfoCardContainer(
@@ -278,62 +400,58 @@ fun postAquariumData(userId: String, unitId: String, unitName: String, onSuccess
 
 
 
+// ✅ InfoCard.kt
+// ✅ InfoCard.kt
 @Composable
-fun InfoCard(
-    modifier: Modifier = Modifier,
-    aquariumCount: Int
-) {
-    val user = FirebaseAuth.getInstance().currentUser
-    val displayName = user?.displayName?.split(" ")?.firstOrNull() ?: "Guest"
-
-    Box(
-        modifier = modifier
-            .width(600.dp)
-            .height(170.dp)
-            .clip(RoundedCornerShape(40.dp))
-            .background(Color.Transparent)
+fun InfoCard(modifier: Modifier = Modifier, aquariumCount: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
     ) {
-        // Efek Frosted Glass (Blur)
         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .drawBehind {
-                    drawRoundRect(
-                        color = Color.White.copy(alpha = 0.5f),
-                        size = size,
-                        cornerRadius = CornerRadius(20f, 20f)
+            modifier = modifier
+                .fillMaxWidth(0.9f)
+                .height(120.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            navyblue.copy(alpha = 0.98f),
+                            navyblue.copy(alpha = 0.85f)
+                        ),
+                        start = Offset(0f, 0f),
+                        end = Offset(400f, 400f)
                     )
-                }
-                .blur(25.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                )
+                .padding(horizontal = 24.dp, vertical = 20.dp)
         ) {
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxSize()
             ) {
-                Text(
-                    text = "Hi, $displayName",
-                    color = Color(0xff111827),
-                    fontSize = 35.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.offset(y = (-20).dp)
-                )
-                Spacer(modifier = Modifier.height(1.dp))
-                Text(
-                    text = "Aquarium already registered : $aquariumCount",
-                    color = Color(0xff374151),
-                    fontSize = 14.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.add_device), // ganti dengan iconmu sendiri
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Aquarium registered : $aquariumCount",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
 }
+
+
+
+
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -342,88 +460,80 @@ fun ListAquariumCard(
     modifier: Modifier = Modifier,
     name: String,
     unitId: String,
-    percentage: Int, // ⬅️ ambil dari GaugeMeterWithStatus
+    percentage: Int,
     statusText: String,
     onClick: () -> Unit,
     onDelete: (String) -> Unit,
 ) {
-    val statusInfo = getStatusInfoFromPercentage(percentage)
+    val cornerRadius = 20.dp
 
     Box(
         modifier = modifier
-            .fillMaxWidth(0.9f)
-            .height(107.dp)
+            .fillMaxWidth()
+            .aspectRatio(1f) // Agar persegi
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = { onDelete(unitId) }
             )
     ) {
+        // Shadow belakang
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(107.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.White.copy(alpha = 0.8f))
-                .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp))
+                .matchParentSize()
+                .offset(x = 6.dp, y = 6.dp)
+                .shadow(
+                    elevation = 10.dp,
+                    shape = RoundedCornerShape(cornerRadius),
+                    ambientColor = Color(0xFFB0BEC5),
+                    spotColor = Color(0xFFA3B1C6)
+                )
         )
 
-        // 🐟 Gambar Aquarium
-        Image(
-            painter = painterResource(id = R.drawable.fish_tank),
-            contentDescription = "fish-tank_2173805 2",
+        Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = 16.dp, y = 28.dp)
-                .size(50.dp)
+                .matchParentSize()
+                .offset(x = (-6).dp, y = (-6).dp)
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(cornerRadius),
+                    ambientColor = softWhite,
+                    spotColor = Color(0xFFE0E0E0)
+                )
         )
 
-        // 🐠 Nama Aquarium
-        Text(
-            text = name,
-            color = Color(0xff4a628a),
-            style = TextStyle(
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            ),
+        // Main card
+        Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = 79.dp, y = 28.dp)
-        )
-
-        // ⏰ Info Jadwal
-        Text(
-            text = "Tidak ada penjadwalan pemberian makan",
-            color = Color(0xff6c7278),
-            fontSize = 8.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = 79.dp, y = 67.dp)
-        )
-
-        // 🚨 Status Icon & Text
-        Column(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .clip(RoundedCornerShape(cornerRadius))
+                .background(Color(0xFFFAFAFA))
         ) {
-            Image(
-                painter = painterResource(id = statusInfo.iconResId),
-                contentDescription = "Status Icon",
-                modifier = Modifier.size(50.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = statusInfo.statusText,
-                fontSize = 14.sp,
-                color = statusInfo.statusColor,
-                fontWeight = FontWeight.Bold
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.fish_tank),
+                    contentDescription = null,
+                    modifier = Modifier.size(60.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = name,
+                    color = Color(0xff4a628a),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
         }
     }
 }
+
+
+
 
 
 
@@ -485,9 +595,12 @@ fun DetailInfoCard(
                 .size(40.dp)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.camera_fish),
+                painter = painterResource(id = R.drawable.cam_fish),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(100.dp),
                 contentDescription = "Deteksi Ikan",
-                tint = Color.Unspecified // Biar tetap pakai warna aslinya
+                tint = Color.Unspecified
             )
         }
     }
@@ -728,7 +841,7 @@ fun GaugeMeterWithStatus(
                 ParameterItem(R.drawable.suhu, "Suhu", "$formattedTemperature °C")
                 ParameterItem(R.drawable.ph, "pH", "$formattedPh pH")
                 ParameterItem(R.drawable.turbidity, "NTU", "$formattedTurbidity NTU")
-                ParameterItem(R.drawable.tds, "TDS", "$formattedTds ppm")
+                ParameterItem(R.drawable.ppm, "TDS", "$formattedTds ppm")
             }
         }
     }
@@ -814,22 +927,11 @@ fun ScheduleCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = schedule.time, // ✅ Ambil time dari ScheduleData
-                    color = Color(0xff4a628a),
+                    color = navyblue,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
-
-            Switch(
-                checked = isActive,
-                onCheckedChange = { isActive = it },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xff4a628a),
-                    uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = Color.LightGray
-                )
-            )
         }
     }
 }
