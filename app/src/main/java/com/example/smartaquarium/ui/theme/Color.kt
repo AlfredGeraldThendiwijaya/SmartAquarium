@@ -17,3 +17,17 @@ val navyblue = Color(0xFF1A3d5f)
 val softWhite = Color(0xFFFAFAFA)
 val darkgray = Color(0xFF212121)
 val mediumgray = Color(0xff616161)
+
+
+val GradientDarkBlue1 = Color(0xFF204A80)
+val GradientDarkBlue2 = Color(0xFF0C1C3E)
+val GradientDarkBlue3 = Color(0xFF0C1C3E)
+val GradientPurple = Color(0xFF302B5C)
+
+val MidnightGradient = listOf(
+    GradientDarkBlue1,
+    GradientDarkBlue1,
+    GradientDarkBlue2,
+    GradientPurple,
+    GradientPurple
+)

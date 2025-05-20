@@ -29,18 +29,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -55,36 +53,38 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import androidx.room.util.copy
 import com.chargemap.compose.numberpicker.NumberPicker
 import com.example.smartaquarium.R
-import com.example.smartaquarium.ViewModel.Aquarium
 import com.example.smartaquarium.ViewModel.DetailViewModel
 import com.example.smartaquarium.network.ScheduleData
-import com.example.smartaquarium.network.deleteUnit
-import com.example.smartaquarium.ui.modifier.neumorphicSurface
-import com.example.smartaquarium.ui.theme.darkgray
 import com.example.smartaquarium.ui.theme.navyblue
 import com.example.smartaquarium.ui.theme.softWhite
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
+import kotlin.math.*
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.firebase.auth.FirebaseAuth
@@ -95,6 +95,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+
 import org.json.JSONObject
 
 @Composable
@@ -139,233 +140,233 @@ fun AddAquariumDialog(
         }
     )
 }
-@Composable
-fun InfoCardContainerOld(
-    onAddAquarium: (String, String) -> Unit,
-    aquariumCount: Int,
-    modifier: Modifier = Modifier
-) {
-    var isDialogOpen by remember { mutableStateOf(false) }
-    var aquariumName by remember { mutableStateOf("") }
-    var serialNumber by remember { mutableStateOf("") }
-    var isNameError by remember { mutableStateOf(false) }
-    var isSerialError by remember { mutableStateOf(false) }
-    val user = FirebaseAuth.getInstance().currentUser
+//@Composable
+//fun InfoCardContainerOld(
+//    onAddAquarium: (String, String) -> Unit,
+//    aquariumCount: Int,
+//    modifier: Modifier = Modifier
+//) {
+//    var isDialogOpen by remember { mutableStateOf(false) }
+//    var aquariumName by remember { mutableStateOf("") }
+//    var serialNumber by remember { mutableStateOf("") }
+//    var isNameError by remember { mutableStateOf(false) }
+//    var isSerialError by remember { mutableStateOf(false) }
+//    val user = FirebaseAuth.getInstance().currentUser
+//
+//    Box(
+//        modifier = modifier.fillMaxWidth()
+//    ) {
+//        InfoCard(
+//            modifier = Modifier.align(Alignment.Center),
+//            aquariumCount = aquariumCount
+//        )
+//
+//        Box(
+//            modifier = Modifier
+//                .size(140.dp)
+//                .align(Alignment.TopEnd)
+//                .offset(y = (-30).dp, x = (-15).dp)
+//                .zIndex(1f)
+//                .clickable(
+//                    indication = null,
+//                    interactionSource = remember { MutableInteractionSource() }
+//                ) {
+//                    isDialogOpen = true
+//                }
+//        ) {
+//            Image(
+//                painter = painterResource(id = R.drawable.add_device),
+//                contentDescription = "Tambah Akuarium",
+//                modifier = Modifier.fillMaxSize()
+//            )
+//        }
+//    }
+//
+//    if (isDialogOpen) {
+//        AlertDialog(
+//            onDismissRequest = { isDialogOpen = false },
+//            title = { Text("Tambah Akuarium") },
+//            text = {
+//                Column {
+//                    OutlinedTextField(
+//                        value = aquariumName,
+//                        onValueChange = {
+//                            aquariumName = it
+//                            isNameError = it.isBlank()
+//                        },
+//                        label = { Text("Nama Akuarium") },
+//                        placeholder = { Text("Masukkan nama akuarium") },
+//                        isError = isNameError,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                    if (isNameError) {
+//                        Text(
+//                            text = "Nama akuarium tidak boleh kosong",
+//                            color = Color.Red,
+//                            fontSize = 12.sp
+//                        )
+//                    }
+//                    Spacer(modifier = Modifier.height(8.dp))
+//                    OutlinedTextField(
+//                        value = serialNumber,
+//                        onValueChange = {
+//                            serialNumber = it
+//                            isSerialError = it.isBlank()
+//                        },
+//                        label = { Text("Serial Number") },
+//                        placeholder = { Text("Masukkan serial number") },
+//                        isError = isSerialError,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                    if (isSerialError) {
+//                        Text(
+//                            text = "Serial number tidak boleh kosong",
+//                            color = Color.Red,
+//                            fontSize = 12.sp
+//                        )
+//                    }
+//                }
+//            },
+//            confirmButton = {
+//                Button(
+//                    onClick = {
+//                        isNameError = aquariumName.isBlank()
+//                        isSerialError = serialNumber.isBlank()
+//                        if (!isNameError && !isSerialError && user != null) {
+//                            postAquariumData(user.uid, serialNumber, aquariumName) {
+//                                onAddAquarium(aquariumName, serialNumber)
+//                                isDialogOpen = false
+//                            }
+//                        }
+//                    }
+//                ) {
+//                    Text("Tambah")
+//                }
+//            },
+//            dismissButton = {
+//                TextButton(onClick = { isDialogOpen = false }) {
+//                    Text("Batal")
+//                }
+//            },
+//            containerColor = Color.White,
+//            textContentColor = Color.Black
+//        )
+//    }
+//}
 
-    Box(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        InfoCard(
-            modifier = Modifier.align(Alignment.Center),
-            aquariumCount = aquariumCount
-        )
-
-        Box(
-            modifier = Modifier
-                .size(140.dp)
-                .align(Alignment.TopEnd)
-                .offset(y = (-30).dp, x = (-15).dp)
-                .zIndex(1f)
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    isDialogOpen = true
-                }
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.add_device),
-                contentDescription = "Tambah Akuarium",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-    }
-
-    if (isDialogOpen) {
-        AlertDialog(
-            onDismissRequest = { isDialogOpen = false },
-            title = { Text("Tambah Akuarium") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = aquariumName,
-                        onValueChange = {
-                            aquariumName = it
-                            isNameError = it.isBlank()
-                        },
-                        label = { Text("Nama Akuarium") },
-                        placeholder = { Text("Masukkan nama akuarium") },
-                        isError = isNameError,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (isNameError) {
-                        Text(
-                            text = "Nama akuarium tidak boleh kosong",
-                            color = Color.Red,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = serialNumber,
-                        onValueChange = {
-                            serialNumber = it
-                            isSerialError = it.isBlank()
-                        },
-                        label = { Text("Serial Number") },
-                        placeholder = { Text("Masukkan serial number") },
-                        isError = isSerialError,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (isSerialError) {
-                        Text(
-                            text = "Serial number tidak boleh kosong",
-                            color = Color.Red,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        isNameError = aquariumName.isBlank()
-                        isSerialError = serialNumber.isBlank()
-                        if (!isNameError && !isSerialError && user != null) {
-                            postAquariumData(user.uid, serialNumber, aquariumName) {
-                                onAddAquarium(aquariumName, serialNumber)
-                                isDialogOpen = false
-                            }
-                        }
-                    }
-                ) {
-                    Text("Tambah")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { isDialogOpen = false }) {
-                    Text("Batal")
-                }
-            },
-            containerColor = Color.White,
-            textContentColor = Color.Black
-        )
-    }
-}
-
-@Composable
-fun InfoCardContainer(
-    onAddAquarium: (String, String) -> Unit,
-    aquariumCount: Int,
-    modifier: Modifier = Modifier
-) {
-    var isDialogOpen by remember { mutableStateOf(false) }
-    var aquariumName by remember { mutableStateOf("") }
-    var serialNumber by remember { mutableStateOf("") }
-    var isNameError by remember { mutableStateOf(false) }
-    var isSerialError by remember { mutableStateOf(false) }
-    val user = FirebaseAuth.getInstance().currentUser
-
-    Box(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        InfoCard(
-            modifier = Modifier.align(Alignment.Center),
-            aquariumCount = aquariumCount
-        )
-
-        Box(
-            modifier = Modifier
-                .size(140.dp)
-                .align(Alignment.TopEnd)
-                .offset(y = (-30).dp, x = (-15).dp)
-                .zIndex(1f)
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    isDialogOpen = true
-                }
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.add_device),
-                contentDescription = "Tambah Akuarium",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-    }
-
-    if (isDialogOpen) {
-        AlertDialog(
-            onDismissRequest = { isDialogOpen = false },
-            title = { Text("Tambah Akuarium") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = aquariumName,
-                        onValueChange = {
-                            aquariumName = it
-                            isNameError = it.isBlank()
-                        },
-                        label = { Text("Nama Akuarium") },
-                        placeholder = { Text("Masukkan nama akuarium") },
-                        isError = isNameError,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (isNameError) {
-                        Text(
-                            text = "Nama akuarium tidak boleh kosong",
-                            color = Color.Red,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = serialNumber,
-                        onValueChange = {
-                            serialNumber = it
-                            isSerialError = it.isBlank()
-                        },
-                        label = { Text("Serial Number") },
-                        placeholder = { Text("Masukkan serial number") },
-                        isError = isSerialError,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (isSerialError) {
-                        Text(
-                            text = "Serial number tidak boleh kosong",
-                            color = Color.Red,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        isNameError = aquariumName.isBlank()
-                        isSerialError = serialNumber.isBlank()
-                        if (!isNameError && !isSerialError && user != null) {
-                            postAquariumData(user.uid, serialNumber, aquariumName) {
-                                onAddAquarium(aquariumName, serialNumber)
-                                isDialogOpen = false
-                            }
-                        }
-                    }
-                ) {
-                    Text("Tambah")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { isDialogOpen = false }) {
-                    Text("Batal")
-                }
-            },
-            containerColor = Color.White,
-            textContentColor = Color.Black
-        )
-    }
-}
+//@Composable
+//fun InfoCardContainer(
+//    onAddAquarium: (String, String) -> Unit,
+//    aquariumCount: Int,
+//    modifier: Modifier = Modifier
+//) {
+//    var isDialogOpen by remember { mutableStateOf(false) }
+//    var aquariumName by remember { mutableStateOf("") }
+//    var serialNumber by remember { mutableStateOf("") }
+//    var isNameError by remember { mutableStateOf(false) }
+//    var isSerialError by remember { mutableStateOf(false) }
+//    val user = FirebaseAuth.getInstance().currentUser
+//
+//    Box(
+//        modifier = modifier.fillMaxWidth()
+//    ) {
+//        InfoCard(
+//            modifier = Modifier.align(Alignment.Center),
+//            aquariumCount = aquariumCount
+//        )
+//
+//        Box(
+//            modifier = Modifier
+//                .size(140.dp)
+//                .align(Alignment.TopEnd)
+//                .offset(y = (-30).dp, x = (-15).dp)
+//                .zIndex(1f)
+//                .clickable(
+//                    indication = null,
+//                    interactionSource = remember { MutableInteractionSource() }
+//                ) {
+//                    isDialogOpen = true
+//                }
+//        ) {
+//            Image(
+//                painter = painterResource(id = R.drawable.add_device),
+//                contentDescription = "Tambah Akuarium",
+//                modifier = Modifier.fillMaxSize()
+//            )
+//        }
+//    }
+//
+//    if (isDialogOpen) {
+//        AlertDialog(
+//            onDismissRequest = { isDialogOpen = false },
+//            title = { Text("Tambah Akuarium") },
+//            text = {
+//                Column {
+//                    OutlinedTextField(
+//                        value = aquariumName,
+//                        onValueChange = {
+//                            aquariumName = it
+//                            isNameError = it.isBlank()
+//                        },
+//                        label = { Text("Nama Akuarium") },
+//                        placeholder = { Text("Masukkan nama akuarium") },
+//                        isError = isNameError,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                    if (isNameError) {
+//                        Text(
+//                            text = "Nama akuarium tidak boleh kosong",
+//                            color = Color.Red,
+//                            fontSize = 12.sp
+//                        )
+//                    }
+//                    Spacer(modifier = Modifier.height(8.dp))
+//                    OutlinedTextField(
+//                        value = serialNumber,
+//                        onValueChange = {
+//                            serialNumber = it
+//                            isSerialError = it.isBlank()
+//                        },
+//                        label = { Text("Serial Number") },
+//                        placeholder = { Text("Masukkan serial number") },
+//                        isError = isSerialError,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                    if (isSerialError) {
+//                        Text(
+//                            text = "Serial number tidak boleh kosong",
+//                            color = Color.Red,
+//                            fontSize = 12.sp
+//                        )
+//                    }
+//                }
+//            },
+//            confirmButton = {
+//                Button(
+//                    onClick = {
+//                        isNameError = aquariumName.isBlank()
+//                        isSerialError = serialNumber.isBlank()
+//                        if (!isNameError && !isSerialError && user != null) {
+//                            postAquariumData(user.uid, serialNumber, aquariumName) {
+//                                onAddAquarium(aquariumName, serialNumber)
+//                                isDialogOpen = false
+//                            }
+//                        }
+//                    }
+//                ) {
+//                    Text("Tambah")
+//                }
+//            },
+//            dismissButton = {
+//                TextButton(onClick = { isDialogOpen = false }) {
+//                    Text("Batal")
+//                }
+//            },
+//            containerColor = Color.White,
+//            textContentColor = Color.Black
+//        )
+//    }
+//}
 
 fun postAquariumData(userId: String, unitId: String, unitName: String, onSuccess: () -> Unit) {
     CoroutineScope(Dispatchers.IO).launch {
@@ -400,10 +401,34 @@ fun postAquariumData(userId: String, unitId: String, unitName: String, onSuccess
 
 
 
-// ✅ InfoCard.kt
-// ✅ InfoCard.kt
 @Composable
-fun InfoCard(modifier: Modifier = Modifier, aquariumCount: Int) {
+fun InfoCard(
+    modifier: Modifier = Modifier,
+    aquariumCount: Int,
+    onAddAquarium: (String, String) -> Unit,
+    gradientStops: List<Pair<Float, Color>> = listOf(
+        0.0f to Color(0xFFF2F2F2).copy(alpha = 0.02f),
+        0.2f to Color(0xFFD8ECE9).copy(alpha = 0.02f),
+        0.5f to Color(0xFF85D8CE).copy(alpha = 0.15f),
+        1f to Color(0xFFC7F862).copy(alpha = 0.35f),
+    )
+) {
+    var isDialogOpen by remember { mutableStateOf(false) }
+    var aquariumName by remember { mutableStateOf("") }
+    var serialNumber by remember { mutableStateOf("") }
+    var isNameError by remember { mutableStateOf(false) }
+    var isSerialError by remember { mutableStateOf(false) }
+    val user = FirebaseAuth.getInstance().currentUser
+    var boxSize by remember { mutableStateOf(IntSize.Zero) }
+
+    val brush = remember(boxSize) {
+        Brush.linearGradient(
+            colorStops = gradientStops.toTypedArray(),
+            start = Offset(0.0f, 0f),
+            end = Offset(boxSize.width * 1f, boxSize.height.toFloat())
+        )
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
@@ -411,43 +436,140 @@ fun InfoCard(modifier: Modifier = Modifier, aquariumCount: Int) {
         Box(
             modifier = modifier
                 .fillMaxWidth(0.9f)
-                .height(120.dp)
+                .height(80.dp)
+                .onGloballyPositioned { coordinates ->
+                    boxSize = coordinates.size
+                }
                 .clip(RoundedCornerShape(28.dp))
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            navyblue.copy(alpha = 0.98f),
-                            navyblue.copy(alpha = 0.85f)
-                        ),
-                        start = Offset(0f, 0f),
-                        end = Offset(400f, 400f)
-                    )
+                .background(brush)
+                .border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.1f), // putih 20% opacity
+                    shape = RoundedCornerShape(28.dp)
                 )
-                .padding(horizontal = 24.dp, vertical = 20.dp)
+                .padding(horizontal = 16.dp) // beri padding horizontal supaya konten ga nempel banget ke tepi
         ) {
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxSize()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.add_device), // ganti dengan iconmu sendiri
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = "Aquarium registered : $aquariumCount",
                         color = Color.White,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Normal
                     )
+                    IconButton(
+                        onClick = { isDialogOpen = true }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp) // ukuran kotak background
+                                .background(
+                                    color = Color.White.copy(alpha = 0.15f), // putih dengan opacity 15%
+                                    shape = CircleShape // biar bulat
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add, // ikon plus dari Material Icons
+                                contentDescription = "Add Icon",
+                                tint = Color(0xFFced2e4)
+                            )
+                        }
+                    }
+
                 }
             }
         }
+        if (isDialogOpen) {
+            AlertDialog(
+                onDismissRequest = { isDialogOpen = false },
+                title = { Text("Tambah Akuarium") },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = aquariumName,
+                            onValueChange = {
+                                aquariumName = it
+                                isNameError = it.isBlank()
+                            },
+                            label = { Text("Nama Akuarium") },
+                            placeholder = { Text("Masukkan nama akuarium") },
+                            isError = isNameError,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        if (isNameError) {
+                            Text(
+                                text = "Nama akuarium tidak boleh kosong",
+                                color = Color.Red,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = serialNumber,
+                            onValueChange = {
+                                serialNumber = it
+                                isSerialError = it.isBlank()
+                            },
+                            label = { Text("Serial Number") },
+                            placeholder = { Text("Masukkan serial number") },
+                            isError = isSerialError,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        if (isSerialError) {
+                            Text(
+                                text = "Serial number tidak boleh kosong",
+                                color = Color.Red,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            isNameError = aquariumName.isBlank()
+                            isSerialError = serialNumber.isBlank()
+                            if (!isNameError && !isSerialError && user != null) {
+                                postAquariumData(user.uid, serialNumber, aquariumName) {
+                                    onAddAquarium(aquariumName, serialNumber)
+                                    isDialogOpen = false
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF001F54) // Navy blue
+                        )
+                    ) {
+                        Text("Tambah")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { isDialogOpen = false },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF001F54) // Navy blue
+                        )
+                    ) {
+                        Text("Batal")
+                    }
+                },
+                containerColor = Color.White,
+                textContentColor = Color.Black
+            )
+        }
+
     }
 }
+
 
 
 

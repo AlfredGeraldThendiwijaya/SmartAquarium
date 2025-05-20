@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.smartaquarium"
-        minSdk = 25
+        minSdk = 31
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.compose.material)
     implementation("com.google.accompanist:accompanist-swiperefresh:0.30.1")
 
+
     // Grafik dan Chart
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
     implementation("com.github.codersalman:Gauge-Library-Android:0.0.1")
@@ -78,6 +79,7 @@ dependencies {
     // Number Picker
     implementation(libs.numberpicker)
     implementation(libs.firebase.database.ktx)
+    implementation(libs.androidx.room.runtime.android)
 
     // Testing
     testImplementation(libs.junit)
