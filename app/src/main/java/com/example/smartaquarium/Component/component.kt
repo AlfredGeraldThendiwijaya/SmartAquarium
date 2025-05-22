@@ -73,7 +73,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
-import androidx.room.util.copy
 import com.chargemap.compose.numberpicker.NumberPicker
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetailViewModel
@@ -664,15 +663,34 @@ fun DetailInfoCard(
     name: String,
     id: String,
     navController: NavController,
-    aquariumSerial: String
+    aquariumSerial: String,
+    gradientStops: List<Pair<Float, Color>> = listOf(
+        0.0f to Color(0xFFF2F2F2).copy(alpha = 0.02f),
+        0.2f to Color(0xFFD8ECE9).copy(alpha = 0.02f),
+        0.5f to Color(0xFF85D8CE).copy(alpha = 0.15f),
+        1f to Color(0xFFC7F862).copy(alpha = 0.35f),
+    )
 ) {
+
+    var boxSize by remember { mutableStateOf(IntSize.Zero) }
+
+    val brush = remember(boxSize) {
+        Brush.linearGradient(
+            colorStops = gradientStops.toTypedArray(),
+            start = Offset(0.0f, 0f),
+            end = Offset(boxSize.width * 1f, boxSize.height.toFloat())
+        )
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth(0.9f)
             .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(10.dp))
-            .background(Color.White.copy(alpha = 0.8f))
-            .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp))
+            .background(brush)
+            .onGloballyPositioned { coordinates ->
+                boxSize = coordinates.size
+            }
+            .border(BorderStroke(1.dp, color = Color.White.copy(alpha = 0.2f),), RoundedCornerShape(10.dp))
             .padding(12.dp)
     ) {
         Row(
@@ -696,13 +714,13 @@ fun DetailInfoCard(
             ) {
                 Text(
                     text = name,
-                    color = Color(0xff4a628a),
+                    color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "serial ID : $id",
-                    color = Color(0xff6c7278),
+                    color = Color(0xFFBCCCCE),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )

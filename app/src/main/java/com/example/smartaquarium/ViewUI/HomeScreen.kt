@@ -1,5 +1,6 @@
 package com.example.smartaquarium.ViewUI
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -44,6 +45,7 @@ import com.example.smartaquarium.ui.theme.navyblue
 import com.google.firebase.auth.FirebaseAuth
 import kotlin.math.max
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewModel()) {
     val configuration = LocalConfiguration.current
