@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,9 +30,11 @@ import com.example.smartaquarium.Component.CustomTimePicker
 import com.example.smartaquarium.Component.ScheduleCard
 import com.example.smartaquarium.ViewModel.ScheduleViewModel
 import com.example.smartaquarium.ui.theme.accentMint
+import com.example.smartaquarium.ui.theme.darkgray
 import com.example.smartaquarium.ui.theme.navyblue
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.hypot
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,123 +96,163 @@ fun ScheduleScreen(navController: NavController, aquariumSerial: String, viewMod
 
     var showDialog by remember { mutableStateOf(false) }
     var selectedScheduleId by remember { mutableStateOf<String?>(null) }
-
+    val midnightGradient = listOf(
+        0.1f to Color(0xFF193F62),
+        0.27f to Color(0xFF0C1C3E),
+        0.65f to Color(0xFF0C1C3E),
+        0.75f to Color(0xFF0C1C3E),
+        1f to Color(0xFF35336B)
+    )
     LaunchedEffect(aquariumSerial) {
         viewModel.getSchedules(aquariumSerial)
 //        viewModel.deleteSchedule(aquariumSerial, selectedScheduleId ?: "")
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(accentMint)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 50.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowLeft,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = navyblue
-                    )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val width = constraints.maxWidth.toFloat()
+            val height = constraints.maxHeight.toFloat()
+            val brush = Brush.radialGradient(
+                colorStops = midnightGradient.toTypedArray(),
+                center = Offset(0f, 0f),
+                radius = hypot(width, height)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(brush)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 50.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    Icons.Rounded.KeyboardArrowLeft,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint =  Color.White
+                                )
+                            }
+                            Text(
+                                text = "Penjadwalan Makan",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        IconButton(onClick = { showBottomSheet = true }) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(
+                                        color = Color.White.copy(alpha = 0.15f),
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Tambah Jadwal",
+                                    tint = Color(0xFFced2e4)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        if (schedules.isEmpty()) {
+                            Text(
+                                text = "Tidak ada penjadwalan",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.Gray,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                        } else {
+                            schedules.forEach { schedule ->
+                                ScheduleCard(
+                                    schedule = schedule,
+                                    onDelete = { scheduleId ->
+                                        selectedScheduleId = scheduleId
+                                        showDialog = true
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(14.dp))
+                            }
+                        }
+                    }
                 }
-                Text(
-                    text = "Penjadwalan Makan",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = navyblue
-                )
-            }
-            IconButton(onClick = { showBottomSheet = true }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Tambah Jadwal",
-                    tint = navyblue
-                )
-            }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            if (schedules.isEmpty()) {
-                Text(
-                    text = "Tidak ada penjadwalan",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Gray,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            } else {
-                schedules.forEach { schedule ->
-                    ScheduleCard(
-                        schedule = schedule,
-                        onDelete = { scheduleId ->
-                            selectedScheduleId = scheduleId
-                            showDialog = true
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        containerColor = Color.White, // ⬅️ Explicit putih
+                        title = {
+                            Text(
+                                "Hapus Jadwal",
+                                fontWeight = FontWeight.Bold,
+                                color = navyblue
+                            )
+                        },
+                        text = {
+                            Text(
+                                "Apakah Anda yakin ingin menghapus jadwal ini?",
+                                color = Color.Black
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                selectedScheduleId?.let {
+                                    viewModel.deleteSchedule(
+                                        aquariumSerial,
+                                        it
+                                    )
+                                }
+                                showDialog = false
+                            }) {
+                                Text("Hapus", color = navyblue)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) {
+                                Text("Batal", color = navyblue)
+                            }
                         }
                     )
-                    Spacer(modifier = Modifier.height(14.dp))
+                }
+
+
+                if (showBottomSheet) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showBottomSheet = false },
+                        containerColor = Color.White,
+                        dragHandle = { BottomSheetDefaults.DragHandle() }
+                    ) {
+                        BottomSheetContent(
+                            onDismiss = { showBottomSheet = false },
+                            onTimeSet = { newTime ->
+                                viewModel.addSchedule(aquariumSerial, newTime)
+                                showBottomSheet = false
+                            }
+                        )
+                    }
                 }
             }
-        }
-    }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            containerColor = Color.White, // ⬅️ Explicit putih
-            title = {
-                Text(
-                    "Hapus Jadwal",
-                    fontWeight = FontWeight.Bold,
-                    color = navyblue
-                )
-            },
-            text = {
-                Text(
-                    "Apakah Anda yakin ingin menghapus jadwal ini?",
-                    color = Color.Black
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedScheduleId?.let { viewModel.deleteSchedule(aquariumSerial, it) }
-                    showDialog = false
-                }) {
-                    Text("Hapus", color = navyblue)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Batal", color = navyblue)
-                }
-            }
-        )
-    }
-
-
-    if (showBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showBottomSheet = false },
-            containerColor = Color.White,
-            dragHandle = { BottomSheetDefaults.DragHandle() }
-        ) {
-            BottomSheetContent(
-                onDismiss = { showBottomSheet = false },
-                onTimeSet = { newTime ->
-                    viewModel.addSchedule(aquariumSerial, newTime)
-                    showBottomSheet = false
-                }
-            )
         }
     }
 }

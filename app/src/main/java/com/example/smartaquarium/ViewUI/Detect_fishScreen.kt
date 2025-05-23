@@ -147,12 +147,23 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                             )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.Rounded.Info,
-                            contentDescription = "Info",
-                            tint = Color.White,
-                            modifier = Modifier.clickable { showInfo = true }
-                        )
+                        IconButton(onClick = { showInfo = true }) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(
+                                        color = Color.White.copy(alpha = 0.15f),
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Info,
+                                    contentDescription = "Info Icon",
+                                    tint = Color(0xFFced2e4)
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))

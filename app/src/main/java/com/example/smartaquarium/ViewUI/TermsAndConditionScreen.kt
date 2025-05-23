@@ -19,7 +19,7 @@ fun TermsAndConditionsScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Syarat dan Ketentuan") },
+                title = { Text("Terms and Conditions") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
@@ -36,7 +36,7 @@ fun TermsAndConditionsScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "Syarat & Ketentuan Penggunaan",
+                text = "Terms & Conditions of Use",
                 fontSize = 20.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 color = navyblue
@@ -44,40 +44,40 @@ fun TermsAndConditionsScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = """
-                    1. Pengenalan
-                    Selamat datang di SmartAquarium! Dengan menggunakan aplikasi ini, Anda menyetujui semua syarat dan ketentuan yang tercantum di bawah ini. Jika Anda tidak setuju dengan salah satu bagian dari syarat ini, harap tidak menggunakan aplikasi ini.
+                    1. Introduction
+                    Welcome to SmartAquarium! By using this application, you agree to all the terms and conditions outlined below. If you do not agree with any part of these terms, please refrain from using this application.
                     
-                    2. Deskripsi Layanan
-                    SmartAquarium adalah aplikasi yang membantu pengguna dalam mengelola dan memantau kondisi akuarium secara digital. Aplikasi ini menyediakan fitur pemantauan kualitas air, pencatatan data, serta notifikasi untuk pemeliharaan rutin.
+                    2. Service Description
+                    SmartAquarium is an application designed to help users manage and monitor aquarium conditions digitally. It offers features such as water quality monitoring, data recording, and routine maintenance notifications.
                     
-                    3. Hak dan Kewajiban Pengguna
-                    - Pengguna bertanggung jawab atas keakuratan informasi yang mereka masukkan dalam aplikasi.
-                    - Pengguna tidak diperbolehkan menggunakan aplikasi untuk tujuan yang melanggar hukum.
-                    - Pengguna tidak diperkenankan menyebarkan, meretas, atau memodifikasi aplikasi tanpa izin resmi dari pengembang.
-                    - Pengguna wajib menjaga keamanan akun mereka dan tidak membagikan kredensial login kepada pihak lain.
+                    3. User Rights and Responsibilities
+                    - Users are responsible for the accuracy of the information they input into the app.
+                    - Users must not use the app for any unlawful purposes.
+                    - Users are not permitted to distribute, hack, or modify the app without official permission from the developer.
+                    - Users must keep their account secure and not share their login credentials with others.
                     
-                    4. Hak dan Kewajiban Pengembang
-                    - Pengembang berhak melakukan perubahan atau pembaruan aplikasi tanpa pemberitahuan sebelumnya.
-                    - Pengembang tidak bertanggung jawab atas kesalahan atau kerugian akibat penggunaan aplikasi.
-                    - Pengembang akan berusaha memastikan keamanan dan stabilitas aplikasi, tetapi tidak menjamin layanan bebas dari gangguan atau kesalahan.
+                    4. Developer Rights and Responsibilities
+                    - The developer reserves the right to modify or update the app without prior notice.
+                    - The developer is not responsible for any errors or losses resulting from the use of the app.
+                    - The developer will strive to ensure the app’s security and stability, but does not guarantee uninterrupted or error-free service.
                     
-                    5. Privasi dan Keamanan
-                    - Data pengguna akan dijaga kerahasiaannya dan tidak akan dijual atau dibagikan kepada pihak ketiga tanpa izin pengguna.
-                    - Aplikasi dapat mengumpulkan data seperti riwayat penggunaan untuk meningkatkan layanan.
-                    - Pengguna bertanggung jawab menjaga keamanan akun mereka, termasuk kata sandi dan kredensial login.
+                    5. Privacy and Security
+                    - User data will be kept confidential and will not be sold or shared with third parties without user consent.
+                    - The app may collect usage history to improve services.
+                    - Users are responsible for maintaining the security of their accounts, including passwords and login credentials.
                     
-                    6. Batasan Tanggung Jawab
-                    - SmartAquarium tidak bertanggung jawab atas kerusakan atau kehilangan yang disebabkan oleh kesalahan pengguna dalam penggunaan aplikasi.
-                    - Aplikasi ini bersifat sebagai alat bantu dan tidak menggantikan perawatan akuarium secara manual.
-                    - Pengguna bertanggung jawab penuh atas keputusan yang mereka buat berdasarkan data yang disajikan dalam aplikasi.
+                    6. Limitation of Liability
+                    - SmartAquarium is not liable for any damage or loss caused by user misuse of the app.
+                    - The app is a supportive tool and does not replace manual aquarium care.
+                    - Users are fully responsible for decisions made based on the data presented in the app.
                     
-                    7. Perubahan Syarat dan Ketentuan
-                    Kami dapat memperbarui syarat dan ketentuan ini dari waktu ke waktu. Jika ada perubahan signifikan, kami akan memberi tahu pengguna melalui aplikasi atau email yang terdaftar.
+                    7. Changes to Terms and Conditions
+                    These terms and conditions may be updated from time to time. If significant changes are made, we will notify users via the app or registered email.
                     
-                    8. Kontak untuk Bantuan
-                    Jika Anda memiliki pertanyaan atau memerlukan bantuan, silakan hubungi kami melalui email: alfred.gerald@student.pradita.ac.id
+                    8. Contact for Support
+                    If you have any questions or need assistance, please contact us via email: alfred.gerald@student.pradita.ac.id
                     
-                    Dengan menggunakan aplikasi ini, Anda dianggap telah membaca, memahami, dan menyetujui semua ketentuan yang berlaku.
+                    By using this app, you are deemed to have read, understood, and agreed to all applicable terms.
                 """.trimIndent(),
                 fontSize = 14.sp
             )

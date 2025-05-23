@@ -58,9 +58,9 @@ fun DetailScreen(
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(aquariumSerial) {
-        Log.d("DETAIL_SCREEN", "Fetching turbidity for serial: $aquariumSerial")
         viewModel.startRealtimeUpdates(aquariumSerial)
     }
+
     val midnightGradient = listOf(
         0.1f to Color(0xFF193F62),
         0.27f to Color(0xFF0C1C3E),
@@ -68,9 +68,8 @@ fun DetailScreen(
         0.75f to Color(0xFF0C1C3E),
         1f to Color(0xFF35336B)
     )
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+
+    Surface(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val width = constraints.maxWidth.toFloat()
             val height = constraints.maxHeight.toFloat()
@@ -85,6 +84,7 @@ fun DetailScreen(
                     .fillMaxSize()
                     .background(brush)
             )
+
             val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
 
             SwipeRefresh(
@@ -121,7 +121,7 @@ fun DetailScreen(
                                 )
                             }
                             Text(
-                                text = "Info Aquarium",
+                                text = "Aquarium Info",
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -148,12 +148,14 @@ fun DetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
                     DetailInfoCard(
                         name = aquariumName,
                         id = aquariumSerial,
                         navController = navController,
                         aquariumSerial = aquariumSerial
                     )
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(
@@ -162,7 +164,7 @@ fun DetailScreen(
                     ) {
                         Text(
                             modifier = Modifier.padding(horizontal = 20.dp),
-                            text = "Detail Info: ",
+                            text = "Detail Info:",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -170,6 +172,7 @@ fun DetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -208,26 +211,26 @@ fun DetailScreen(
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "\uD83D\uDFE2 Kualitas Air Aman",
+                                    text = "\uD83D\uDFE2 Water Quality is Safe",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = darkgray
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Total air sehat bertahan selama:",
+                                    text = "Safe water duration:",
                                     fontSize = 14.sp,
                                     color = darkgray
                                 )
                                 Text(
-                                    text = "8 hari 16 jam",
+                                    text = "8 days 16 hours",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = darkgray
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "\uD83D\uDCCB Setelah itu memburuk pada:",
+                                    text = "\uD83D\uDCCB Predicted to worsen on:",
                                     fontSize = 14.sp,
                                     color = darkgray
                                 )
@@ -268,7 +271,7 @@ fun DetailScreen(
                             )
                     ) {
                         Text(
-                            text = "Atur Jadwal Pemberian Makan",
+                            text = "Set Feeding Schedule",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = navyblue
@@ -287,12 +290,12 @@ fun DetailScreen(
                             onClick = { showDialog.value = false },
                             colors = ButtonDefaults.textButtonColors(contentColor = navyblue)
                         ) {
-                            Text("Tutup", color = navyblue)
+                            Text("Close", color = navyblue)
                         }
                     },
                     title = {
                         Text(
-                            text = "Penjelasan Indikator",
+                            text = "Indicator Explanation",
                             fontWeight = FontWeight.Bold,
                             color = darkgray
                         )
@@ -301,11 +304,11 @@ fun DetailScreen(
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            InfoItem(R.drawable.suhu, "Suhu", "Menunjukkan suhu air dalam akuarium.")
-                            InfoItem(R.drawable.ph, "pH", "Mengukur tingkat keasaman air.")
-                            InfoItem(R.drawable.turbidity, "Turbidity", "Menunjukkan tingkat kejernihan air (NTU).")
-                            InfoItem(R.drawable.ppm, "TDS", "Menunjukkan jumlah padatan terlarut (ppm).")
-                            InfoItem(R.drawable.risk, "Status Resiko", "Menunjukkan status Aman, Beresiko, atau Berbahaya.")
+                            InfoItem(R.drawable.suhu, "Temperature", "Indicates the water temperature in the aquarium.")
+                            InfoItem(R.drawable.ph, "pH", "Measures the acidity level of the water.")
+                            InfoItem(R.drawable.ppm, "TDS", "Indicates the total dissolved solids (ppm).")
+                            InfoItem(R.drawable.turbidity, "Turbidity", "Indicates the clarity level of the water (NTU).")
+                            InfoItem(R.drawable.risk, "Risk Status", "Displays Safe, Risky, or Dangerous status.")
                         }
                     },
                     containerColor = Color.White,
@@ -315,3 +318,4 @@ fun DetailScreen(
         }
     }
 }
+

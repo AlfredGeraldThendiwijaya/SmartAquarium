@@ -980,8 +980,8 @@ fun GaugeMeterWithStatus(
                 val formattedTds = tds?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
                 ParameterItem(R.drawable.suhu, "Suhu", "$formattedTemperature °C")
                 ParameterItem(R.drawable.ph, "pH", "$formattedPh pH")
-                ParameterItem(R.drawable.turbidity, "NTU", "$formattedTurbidity NTU")
                 ParameterItem(R.drawable.ppm, "TDS", "$formattedTds ppm")
+                ParameterItem(R.drawable.turbidity, "NTU", "$formattedTurbidity NTU")
             }
         }
     }
