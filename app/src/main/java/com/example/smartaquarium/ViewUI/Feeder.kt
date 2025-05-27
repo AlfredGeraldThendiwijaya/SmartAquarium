@@ -47,7 +47,7 @@ fun BottomSheetContent(onDismiss: () -> Unit, onTimeSet: (String) -> Unit) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Atur Jadwal", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = navyblue)
+        Text("Set Schedule ", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = navyblue)
         Spacer(modifier = Modifier.height(16.dp))
 
         CustomTimePicker(
@@ -70,7 +70,7 @@ fun BottomSheetContent(onDismiss: () -> Unit, onTimeSet: (String) -> Unit) {
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = navyblue)
             ) {
-                Text("Batal", color = Color.White)
+                Text("Cancel", color = Color.White)
             }
             Button(
                 onClick = {
@@ -147,7 +147,7 @@ fun ScheduleScreen(navController: NavController, aquariumSerial: String, viewMod
                                 )
                             }
                             Text(
-                                text = "Penjadwalan Makan",
+                                text = "Feeding Schedule",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -177,7 +177,7 @@ fun ScheduleScreen(navController: NavController, aquariumSerial: String, viewMod
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         if (schedules.isEmpty()) {
                             Text(
-                                text = "Tidak ada penjadwalan",
+                                text = "no scheduling",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color.Gray,
@@ -204,14 +204,14 @@ fun ScheduleScreen(navController: NavController, aquariumSerial: String, viewMod
                         containerColor = Color.White, // ⬅️ Explicit putih
                         title = {
                             Text(
-                                "Hapus Jadwal",
+                                "Delete Schedule",
                                 fontWeight = FontWeight.Bold,
                                 color = navyblue
                             )
                         },
                         text = {
                             Text(
-                                "Apakah Anda yakin ingin menghapus jadwal ini?",
+                                "Are you sure want to delete this schedule?",
                                 color = Color.Black
                             )
                         },
@@ -225,12 +225,12 @@ fun ScheduleScreen(navController: NavController, aquariumSerial: String, viewMod
                                 }
                                 showDialog = false
                             }) {
-                                Text("Hapus", color = navyblue)
+                                Text("Delete", color = navyblue)
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDialog = false }) {
-                                Text("Batal", color = navyblue)
+                                Text("Cancel", color = navyblue)
                             }
                         }
                     )

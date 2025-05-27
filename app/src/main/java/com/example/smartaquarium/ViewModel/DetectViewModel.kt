@@ -1,24 +1,39 @@
 package com.example.smartaquarium.ViewModel
 
+import android.app.Application
+import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.smartaquarium.network.analyzer.AnalyzerRetrofitInstance
 import com.example.smartaquarium.utils.AuthManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class DetectViewModel : ViewModel() {
+class DetectViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
     private val _latestImageUrl = MutableStateFlow<String?>(null)
     val latestImageUrl: StateFlow<String?> = _latestImageUrl
+
+    private val _predictionResult = MutableStateFlow<String?>(null)
+    val predictionResult: StateFlow<String?> = _predictionResult
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading
 
     fun triggerWirelessCamera(unitId: String, onFailure: (() -> Unit)? = null) {
         _isLoading.value = true
@@ -35,7 +50,6 @@ class DetectViewModel : ViewModel() {
 
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    // === Trigger capture ===
                     val triggerConnection = URL(triggerUrl).openConnection() as HttpURLConnection
                     triggerConnection.requestMethod = "POST"
                     triggerConnection.doOutput = true
@@ -55,7 +69,6 @@ class DetectViewModel : ViewModel() {
 
                     delay(10000)
 
-                    // === GET image URL ===
                     val imageRequest = URL(imageUrlApi).openConnection() as HttpURLConnection
                     imageRequest.requestMethod = "GET"
                     imageRequest.setRequestProperty("Cache-Control", "no-cache")
@@ -126,6 +139,82 @@ class DetectViewModel : ViewModel() {
         }
 
         return null
+    }
+
+    fun analyzeImage(selectedUri: Uri?, capturedBitmap: Bitmap?, imageUrl: String?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isUploading.value = true
+            try {
+                val imageFile = when {
+                    selectedUri != null -> {
+                        val inputStream = getApplication<Application>().contentResolver.openInputStream(selectedUri)
+                        val tempFile = File.createTempFile("gallery", ".jpg")
+                        val outputStream = FileOutputStream(tempFile)
+                        inputStream?.copyTo(outputStream)
+                        outputStream.close()
+                        inputStream?.close()
+                        tempFile
+                    }
+                    capturedBitmap != null -> {
+                        val tempFile = File.createTempFile("camera", ".jpg")
+                        val outputStream = FileOutputStream(tempFile)
+                        capturedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                        outputStream.close()
+                        tempFile
+                    }
+                    imageUrl != null -> {
+                        val connection = URL(imageUrl).openConnection() as HttpURLConnection
+                        connection.connect()
+                        val inputStream = connection.inputStream
+                        val tempFile = File.createTempFile("downloaded", ".jpg")
+                        val outputStream = FileOutputStream(tempFile)
+                        inputStream.copyTo(outputStream)
+                        outputStream.close()
+                        inputStream.close()
+                        tempFile
+                    }
+                    else -> null
+                }
+
+                if (imageFile == null) {
+                    _predictionResult.emit("❌ Gagal menyiapkan file gambar.")
+                    return@launch
+                }
+
+                val requestFile = imageFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                val body = MultipartBody.Part.createFormData("image", imageFile.name, requestFile)
+
+                val response = AnalyzerRetrofitInstance.api.analyzeImage(body)
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body()?.string() ?: "{}"
+                    val json = JSONObject(responseBody)
+                    val result = json.optString("result", "Unknown")
+
+                    val formattedResult = when (result.lowercase()) {
+                        "red_melon" -> "Red Melon (Healthy)"
+                        "blue_diamond" -> "Blue Diamond (Healthy)"
+                        "anomaly" -> "⚠️ Anomaly detected!"
+                        else -> "Unknown result: $result"
+                    }
+
+                    _predictionResult.emit(formattedResult)
+                } else {
+                    _predictionResult.emit("❌ Analysis failed. Code: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("ANALYZE", "❌ Error:", e)
+                _predictionResult.emit("❌ Terjadi kesalahan: ${e.message}")
+            } finally {
+                _isUploading.value = false
+            }
+        }
+    }
+
+    fun resetPrediction() {
+        viewModelScope.launch {
+            _predictionResult.emit(null)
+        }
     }
 
     fun clearWirelessImage() {

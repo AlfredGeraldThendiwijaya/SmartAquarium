@@ -62,6 +62,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material)
     implementation("com.google.accompanist:accompanist-swiperefresh:0.30.1")
+    implementation("com.github.CanHub:Android-Image-Cropper:4.4.0")
+
 
 
     // Grafik dan Chart

@@ -400,6 +400,8 @@ fun postAquariumData(userId: String, unitId: String, unitName: String, onSuccess
 
 
 
+// English-translated version of InfoCard.kt
+
 @Composable
 fun InfoCard(
     modifier: Modifier = Modifier,
@@ -443,10 +445,10 @@ fun InfoCard(
                 .background(brush)
                 .border(
                     width = 1.dp,
-                    color = Color.White.copy(alpha = 0.1f), // putih 20% opacity
+                    color = Color.White.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(28.dp)
                 )
-                .padding(horizontal = 16.dp) // beri padding horizontal supaya konten ga nempel banget ke tepi
+                .padding(horizontal = 16.dp)
         ) {
             Column(
                 verticalArrangement = Arrangement.Center,
@@ -459,38 +461,32 @@ fun InfoCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Aquarium registered : $aquariumCount",
+                        text = "Registered aquariums: $aquariumCount",
                         color = Color.White,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Normal
                     )
-                    IconButton(
-                        onClick = { isDialogOpen = true }
-                    ) {
+                    IconButton(onClick = { isDialogOpen = true }) {
                         Box(
                             modifier = Modifier
-                                .size(46.dp) // ukuran kotak background
-                                .background(
-                                    color = Color.White.copy(alpha = 0.15f), // putih dengan opacity 15%
-                                    shape = CircleShape // biar bulat
-                                ),
+                                .size(46.dp)
+                                .background(Color.White.copy(alpha = 0.15f), shape = CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Add, // ikon plus dari Material Icons
+                                imageVector = Icons.Default.Add,
                                 contentDescription = "Add Icon",
                                 tint = Color(0xFFced2e4)
                             )
                         }
                     }
-
                 }
             }
         }
         if (isDialogOpen) {
             AlertDialog(
                 onDismissRequest = { isDialogOpen = false },
-                title = { Text("Tambah Akuarium") },
+                title = { Text("Add Aquarium") },
                 text = {
                     Column {
                         OutlinedTextField(
@@ -499,14 +495,14 @@ fun InfoCard(
                                 aquariumName = it
                                 isNameError = it.isBlank()
                             },
-                            label = { Text("Nama Akuarium") },
-                            placeholder = { Text("Masukkan nama akuarium") },
+                            label = { Text("Aquarium Name") },
+                            placeholder = { Text("Enter aquarium name") },
                             isError = isNameError,
                             modifier = Modifier.fillMaxWidth()
                         )
                         if (isNameError) {
                             Text(
-                                text = "Nama akuarium tidak boleh kosong",
+                                text = "Aquarium name cannot be empty",
                                 color = Color.Red,
                                 fontSize = 12.sp
                             )
@@ -519,13 +515,13 @@ fun InfoCard(
                                 isSerialError = it.isBlank()
                             },
                             label = { Text("Serial Number") },
-                            placeholder = { Text("Masukkan serial number") },
+                            placeholder = { Text("Enter serial number") },
                             isError = isSerialError,
                             modifier = Modifier.fillMaxWidth()
                         )
                         if (isSerialError) {
                             Text(
-                                text = "Serial number tidak boleh kosong",
+                                text = "Serial number cannot be empty",
                                 color = Color.Red,
                                 fontSize = 12.sp
                             )
@@ -544,30 +540,26 @@ fun InfoCard(
                                 }
                             }
                         },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xFF001F54) // Navy blue
-                        )
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF001F54))
                     ) {
-                        Text("Tambah")
+                        Text("Add")
                     }
                 },
                 dismissButton = {
                     TextButton(
                         onClick = { isDialogOpen = false },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xFF001F54) // Navy blue
-                        )
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF001F54))
                     ) {
-                        Text("Batal")
+                        Text("Cancel")
                     }
                 },
                 containerColor = Color.White,
                 textContentColor = Color.Black
             )
         }
-
     }
 }
+
 
 
 
@@ -846,7 +838,7 @@ fun GaugeMeterWithStatus(
     val phState by viewModel.ph.collectAsState()
     val tds by viewModel.tds.collectAsState()
 
-    // === Fungsi perhitungan skor sesuai logika Python ===
+    // === Scoring functions matching the Python logic ===
     fun scorePh(ph: Double): Double {
         return when {
             ph < 5.5 || ph > 7.5 -> 0.0
@@ -881,23 +873,23 @@ fun GaugeMeterWithStatus(
 
     val (gradientColors, statusText, statusColor) = when {
         avgScore >= 80 -> Triple(
-            listOf(Color(0xFF4CAF50), Color(0xFF81C784)), // Hijau ke Hijau Muda
-            "Aman",
+            listOf(Color(0xFF4CAF50), Color(0xFF81C784)), // Green to Light Green
+            "Safe",
             Color(0xFF4CAF50)
         )
         avgScore >= 50 -> Triple(
-            listOf(Color(0xFFFFC107), Color(0xFFFF9800)), // Kuning ke Oranye
-            "Beresiko",
+            listOf(Color(0xFFFFC107), Color(0xFFFF9800)), // Yellow to Orange
+            "At Risk",
             Color(0xFFFFA000)
         )
         else -> Triple(
-            listOf(Color(0xFFFF9800), Color(0xFFD32F2F)), // Oranye ke Merah
-            "Berbahaya",
+            listOf(Color(0xFFFF9800), Color(0xFFD32F2F)), // Orange to Red
+            "Dangerous",
             Color.Red
         )
     }
 
-    // === UI tetap seperti sebelumnya ===
+    // === UI remains unchanged ===
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -917,7 +909,7 @@ fun GaugeMeterWithStatus(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Kualitas Air",
+                    text = "Water Quality",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray,
@@ -928,7 +920,6 @@ fun GaugeMeterWithStatus(
 
                 Box(contentAlignment = Alignment.Center) {
                     val sweepAngle = (percentage / 100f) * 250f
-
 
                     Canvas(modifier = Modifier.size(120.dp)) {
                         val strokeWidth = 18.dp.toPx()
@@ -978,10 +969,10 @@ fun GaugeMeterWithStatus(
                 val formattedTemperature = temperatureState?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
                 val formattedPh = phState?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
                 val formattedTds = tds?.toFloat()?.let { String.format("%.1f", it) } ?: "N/A"
-                ParameterItem(R.drawable.suhu, "Suhu", "$formattedTemperature °C")
+                ParameterItem(R.drawable.suhu, "Temperature", "$formattedTemperature °C")
                 ParameterItem(R.drawable.ph, "pH", "$formattedPh pH")
                 ParameterItem(R.drawable.ppm, "TDS", "$formattedTds ppm")
-                ParameterItem(R.drawable.turbidity, "NTU", "$formattedTurbidity NTU")
+                ParameterItem(R.drawable.turbidity, "Turbidity", "$formattedTurbidity NTU")
             }
         }
     }
