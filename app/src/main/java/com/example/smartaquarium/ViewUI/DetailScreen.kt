@@ -40,6 +40,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.hypot
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
+fun String.lineOrNull(index: Int): String? {
+    return this.lines().getOrNull(index)?.trim()
+}
+
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun DetailScreen(
     navController: NavController,
@@ -59,7 +64,9 @@ fun DetailScreen(
 
     LaunchedEffect(aquariumSerial) {
         viewModel.startRealtimeUpdates(aquariumSerial)
+        viewModel.fetchForecast(aquariumSerial)
     }
+    val forecastText by viewModel.forecastResult.collectAsState()
 
     val midnightGradient = listOf(
         0.1f to Color(0xFF193F62),
@@ -209,37 +216,48 @@ fun DetailScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFDFF5E3))
                         ) {
+
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "\uD83D\uDFE2 Water Quality is Safe",
+                                    text = "Water Quality Forecast",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = darkgray
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Safe water duration:",
-                                    fontSize = 14.sp,
-                                    color = darkgray
-                                )
-                                Text(
-                                    text = "8 days 16 hours",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = darkgray
-                                )
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "\uD83D\uDCCB Predicted to worsen on:",
-                                    fontSize = 14.sp,
-                                    color = darkgray
-                                )
-                                Text(
-                                    text = "2023-02-04 03:00:00",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = darkgray
-                                )
+
+                                val forecastLines = forecastText?.lines()
+
+                                if (forecastLines != null && forecastLines.size >= 2) {
+                                    val duration = forecastLines[0]
+                                        .replace("Total air sehat bertahan selama:", "Safe water duration:")
+                                        .replace("jam", "hours")
+                                    val range = forecastLines[1]
+                                        .replace("Dari:", "From:")
+                                        .replace("s/d", "to")
+
+                                    Text(
+                                        text = duration.trim(),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = darkgray
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "\uD83D\uDCCB Predicted to worsen on:",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = darkgray
+                                    )
+                                    Text(
+                                        text = range.trim(),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = darkgray
+                                    )
+                                } else {
+                                    Text(text = "Loading...", color = darkgray)
+                                }
                             }
                         }
                     }

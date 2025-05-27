@@ -4,7 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartaquarium.network.RetrofitInstance
+import com.example.smartaquarium.network.analyzer.AnalyzerRetrofitInstance
+import com.example.smartaquarium.network.analyzer.AnalyzerRetrofitInstance.api
 import com.example.smartaquarium.network.ph_reading
+import com.example.smartaquarium.network.predict.PredictRetrofitInstance
 import com.example.smartaquarium.network.tds_reading
 import com.example.smartaquarium.network.temperature_reading
 import com.example.smartaquarium.network.turbidity_reading
@@ -35,23 +38,22 @@ class DetailViewModel : ViewModel() {
     private val _tds = MutableStateFlow<Double?>(null)
     val tds: StateFlow<Double?> get() = _tds
 
-    init {
-        loadDummyData()
-    }
+    val _forecastResult = MutableStateFlow<String?>(null)
+    val forecastResult: StateFlow<String?> get() = _forecastResult
 
-    private fun loadDummyData() {
-        val data = listOf(
-            Entry(1f, 0f), // Senin - Aman
-            Entry(2f, 1f), // Selasa - Berisiko
-            Entry(3f, 2f), // Rabu - Berbahaya
-            Entry(4f, 1f), // Kamis - Berisiko
-            Entry(5f, 0f), // Jumat - Aman
-            Entry(6f, 2f), // Sabtu - Berbahaya
-            Entry(7f, 1f)  // Minggu - Berisiko
-        )
-        _sensorDataPoints.value = data
-    }
 
+    fun fetchForecast(unitId: String) {
+        viewModelScope.launch {
+            try {
+                val response = PredictRetrofitInstance.api.getForecastText(unitId)
+                if (response.isSuccessful) {
+                    _forecastResult.value = response.body()?.string()
+                }
+            } catch (e: Exception) {
+                Log.e("Forecast", "Error fetching forecast", e)
+            }
+        }
+    }
     fun fetchTurbidity(unitId: String) {
         Log.d("FETCH_TURBIDITY", "Fetching turbidity for unitId: $unitId")
 

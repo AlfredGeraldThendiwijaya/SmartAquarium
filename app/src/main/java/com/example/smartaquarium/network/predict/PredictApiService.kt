@@ -1,4 +1,4 @@
-package com.example.smartaquarium.network.analyzer
+package com.example.smartaquarium.network.predict
 
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -9,11 +9,7 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 
-interface AnalyzerApiService {
-    @Multipart
-    @POST("analyze")
-    suspend fun analyzeImage(
-        @Part image: MultipartBody.Part
-    ): Response<ResponseBody>
-
+interface PredictApiService {
+    @GET("predict-xgb/{unit_id}")
+    suspend fun getForecastText(@Path("unit_id") unitId: String): Response<ResponseBody>
 }
