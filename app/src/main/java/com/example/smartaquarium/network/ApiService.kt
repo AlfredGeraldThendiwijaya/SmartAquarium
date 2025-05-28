@@ -123,6 +123,8 @@ interface ApiService {
         @Path("unitId") unitId: String
     ):deleteResponse
 
+    @GET("get-forecast-summary/{unit_id}")
+    suspend fun getForecastText(@Path("unit_id") unitId: String): Response<ResponseBody>
 }
 
 

@@ -45,7 +45,7 @@ class DetailViewModel : ViewModel() {
     fun fetchForecast(unitId: String) {
         viewModelScope.launch {
             try {
-                val response = PredictRetrofitInstance.api.getForecastText(unitId)
+                val response = RetrofitInstance.apiService.getForecastText(unitId)
                 if (response.isSuccessful) {
                     _forecastResult.value = response.body()?.string()
                 }
