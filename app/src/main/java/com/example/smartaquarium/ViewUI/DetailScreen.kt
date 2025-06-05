@@ -27,7 +27,6 @@ import androidx.navigation.NavController
 import com.example.smartaquarium.Component.DetailInfoCard
 import com.example.smartaquarium.Component.GaugeMeterWithStatus
 import com.example.smartaquarium.Component.InfoItem
-import com.example.smartaquarium.Component.LineChartComponent
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetailViewModel
 import com.example.smartaquarium.ui.theme.accentMint

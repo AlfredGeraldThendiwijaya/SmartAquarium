@@ -82,6 +82,7 @@ dependencies {
     implementation(libs.numberpicker)
     implementation(libs.firebase.database.ktx)
     implementation(libs.androidx.room.runtime.android)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Testing
     testImplementation(libs.junit)

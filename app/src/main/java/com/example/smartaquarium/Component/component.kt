@@ -769,59 +769,6 @@ fun getStatusInfoFromPercentage(percentage: Int): StatusInfo {
     }
 }
 
-@Composable
-fun LineChartComponent(dataPoints: List<Entry>) {
-    AndroidView(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(250.dp)
-            .padding(16.dp),
-        factory = { context ->
-            LineChart(context).apply {
-                description.isEnabled = false
-                setTouchEnabled(true)
-                setPinchZoom(true)
-
-                // Buat dataset
-                val dataSet = LineDataSet(dataPoints, "Kondisi Sensor")
-                dataSet.color = Color.Blue.toArgb()
-                dataSet.valueTextColor = Color.Black.toArgb()
-                dataSet.setDrawValues(true)
-                dataSet.setDrawCircles(true)
-
-                val lineData = LineData(dataSet)
-                data = lineData
-
-                // Format Sumbu X (1-7 menjadi Senin-Minggu)
-                xAxis.valueFormatter = object : ValueFormatter() {
-                    private val days = arrayOf("Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min")
-                    override fun getFormattedValue(value: Float): String {
-                        val index = value.toInt() - 1
-                        return if (index in days.indices) days[index] else ""
-                    }
-                }
-                xAxis.granularity = 1f // Langkah per hari
-
-                // Format Sumbu Y (0-2 menjadi Aman, Berisiko, Berbahaya)
-                axisLeft.valueFormatter = object : ValueFormatter() {
-                    private val labels = arrayOf("Aman", "Berisiko", "Berbahaya")
-                    override fun getFormattedValue(value: Float): String {
-                        val index = value.toInt()
-                        return if (index in labels.indices) labels[index] else ""
-                    }
-                }
-                axisLeft.axisMinimum = 0f
-                axisLeft.axisMaximum = 2f
-                axisLeft.granularity = 1f
-
-                axisRight.isEnabled = false // Nonaktifkan sumbu kanan
-                xAxis.position = XAxis.XAxisPosition.BOTTOM
-
-                invalidate() // Refresh Chart
-            }
-        }
-    )
-}
 
 @SuppressLint("DefaultLocale")
 @Composable
