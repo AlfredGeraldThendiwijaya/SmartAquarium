@@ -13,6 +13,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.MaterialTheme
 import androidx.core.content.ContextCompat
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -58,6 +59,9 @@ class MainActivity : ComponentActivity() {
             SmartAquariumTheme {
                 NavigationApp()
             }
+//            MaterialTheme {
+//                ForecastChartScreen() // 🔥 Dipanggil di sini
+//            }
         }
     }
     private fun scheduleBackgroundWorker() {

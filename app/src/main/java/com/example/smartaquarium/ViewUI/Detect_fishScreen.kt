@@ -1,17 +1,13 @@
-// Required dependency:
-// implementation("com.github.CanHub:Android-Image-Cropper:4.4.0")
-
 package com.example.smartaquarium.ViewUI
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.graphics.asImageBitmap
-import coil.request.CachePolicy
-import coil.request.ImageRequest
 import androidx.activity.result.launch
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,10 +18,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -44,6 +39,8 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.canhub.cropper.*
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetectViewModel
@@ -55,27 +52,30 @@ import kotlin.math.hypot
 @Composable
 fun DetectScreen(navController: NavController, aquariumSerial: String) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var capturedImageFile by remember { mutableStateOf<File?>(null) }
     val context = LocalContext.current
 
     val viewModel: DetectViewModel = viewModel()
     val latestImageUrl by viewModel.latestImageUrl.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isUploading by viewModel.isUploading.collectAsState()
+    val isWirelessImage by viewModel.isWirelessImage.collectAsState()
     val predictionResult by viewModel.predictionResult.collectAsState()
 
     var showError by remember { mutableStateOf(false) }
     var showInfo by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(selectedImageUri, capturedBitmap, latestImageUrl) {
+    val hasImage = selectedImageUri != null || capturedImageFile != null || latestImageUrl != null
+
+    LaunchedEffect(selectedImageUri, capturedImageFile, latestImageUrl) {
         viewModel.resetPrediction()
     }
 
     val cropImageLauncher = rememberLauncherForActivityResult(CropImageContract()) { result ->
         if (result.isSuccessful) {
             selectedImageUri = result.uriContent
-            capturedBitmap = null
+            capturedImageFile = null
         }
     }
 
@@ -98,11 +98,23 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
         }
     }
 
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
-        bitmap?.let {
-            val imageUri = bitmapToUri(context, it)
+// Tambahkan ini di atas:
+    var tempCapturedFile by remember { mutableStateOf<File?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
+        val finalFile = viewModel.getFinalImageFileIfExists(success)
+        if (success && finalFile != null) {
+            capturedImageFile = finalFile
+            viewModel.confirmCapturedImage()
+
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                finalFile
+            )
+
             val cropOptions = CropImageContractOptions(
-                imageUri,
+                uri,
                 CropImageOptions().apply {
                     activityTitle = "Crop Image"
                     fixAspectRatio = true
@@ -114,16 +126,22 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                     cropMenuCropButtonTitle = "Done"
                 }
             )
+
             cropImageLauncher.launch(cropOptions)
+            selectedImageUri = null
+        } else {
+            viewModel.clearPendingImageFile()
         }
     }
+
 
 
     LaunchedEffect(showError) {
         if (showError) {
             snackbarHostState.showSnackbar("❌ Failed to retrieve image from wireless camera. Make sure ESP32-CAM is on.")
-            showError = false
+            showError = true
         }
+        Log.e("DetecScreen", "${showError}" )
     }
 
     LaunchedEffect(showInfo) {
@@ -149,7 +167,9 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                 radius = hypot(width, height)
             )
 
-            Box(modifier = Modifier.fillMaxSize().background(brush)) {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .background(brush)) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -159,7 +179,9 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
-                        modifier = Modifier.padding(top = 50.dp).fillMaxWidth(),
+                        modifier = Modifier
+                            .padding(top = 50.dp)
+                            .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -167,13 +189,16 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                             IconButton(onClick = { navController.popBackStack() }) {
                                 Icon(Icons.Rounded.KeyboardArrowLeft, contentDescription = null, tint = Color.White)
                             }
-                            Text("Anomaly Detection", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Capture Image", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                         IconButton(onClick = { showInfo = true }) {
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .background(Color.White.copy(alpha = 0.15f), shape = CircleShape),
+                                    .background(
+                                        Color.White.copy(alpha = 0.15f),
+                                        shape = CircleShape
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Outlined.Info, contentDescription = "Info", tint = Color(0xFFced2e4))
@@ -183,12 +208,27 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
 
                     Spacer(modifier = Modifier.height(24.dp))
                     Text("Choose Image Source", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-
                     Spacer(modifier = Modifier.height(16.dp))
 
                     InputOption(R.drawable.gallery_ic, "Pick from Gallery", { galleryLauncher.launch("image/*") }, !isUploading)
                     Spacer(modifier = Modifier.height(12.dp))
-                    InputOption(R.drawable.camera_ic, "Take a Photo", { cameraLauncher.launch() }, !isUploading)
+                    InputOption(
+                        R.drawable.camera_ic,
+                        "Take a Photo",
+                        {
+                            val file = viewModel.createImageFile(context)
+                            viewModel.setPendingImageFile(file) // simpan sementara di VM
+                            val uri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                file
+                            )
+                            cameraLauncher.launch(uri)
+                        },
+                        !isUploading
+                    )
+
+
                     Spacer(modifier = Modifier.height(12.dp))
                     InputOption(
                         R.drawable.wireless_cam_ic,
@@ -202,7 +242,6 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                         enabled = !isLoading && !isUploading
                     )
 
-                    val hasImage = selectedImageUri != null || capturedBitmap != null || latestImageUrl != null
                     if (hasImage) {
                         Spacer(modifier = Modifier.height(32.dp))
                         Text("Image Preview:", color = Color.White)
@@ -219,14 +258,19 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                                     painter = rememberAsyncImagePainter(selectedImageUri),
                                     contentDescription = "Preview",
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Fit
+                                    contentScale = ContentScale.Crop
                                 )
-                                capturedBitmap != null -> Image(
-                                    bitmap = capturedBitmap!!.asImageBitmap(),
-                                    contentDescription = "Preview",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Fit
-                                )
+                                capturedImageFile != null -> {
+                                    val bitmap = BitmapFactory.decodeFile(capturedImageFile!!.absolutePath)
+                                    if (bitmap != null) {
+                                        Image(
+                                            bitmap = bitmap.asImageBitmap(),
+                                            contentDescription = "Preview",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                }
                                 latestImageUrl != null -> {
                                     val imageKey = remember(latestImageUrl) { System.currentTimeMillis().toString() }
                                     Image(
@@ -239,7 +283,7 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                                         ),
                                         contentDescription = "Wireless Preview",
                                         modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Fit
+                                        contentScale = ContentScale.Crop
                                     )
                                 }
                             }
@@ -247,8 +291,8 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                             IconButton(
                                 onClick = {
                                     selectedImageUri = null
-                                    capturedBitmap = null
-                                    viewModel.clearWirelessImage()
+                                    capturedImageFile = null
+                                    viewModel.clearAllImageSources()
                                 },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -261,7 +305,10 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                                     tint = Color.Red,
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(Color.White.copy(alpha = 0.8f), shape = CircleShape)
+                                        .background(
+                                            Color.White.copy(alpha = 0.8f),
+                                            shape = CircleShape
+                                        )
                                 )
                             }
                         }
@@ -278,20 +325,22 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
                     }
                 }
 
-                Button(
-                    onClick = {
-                        viewModel.analyzeImage(selectedImageUri, capturedBitmap, latestImageUrl)
-                    },
-                    enabled = !isUploading,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA4F869)),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(24.dp)
-                        .height(60.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text("Analyze Now", color = navyblue, fontSize = 16.sp)
+                if (hasImage && !isWirelessImage) {
+                    Button(
+                        onClick = {
+                            viewModel.analyzeImage(selectedImageUri, capturedImageFile, latestImageUrl)
+                        },
+                        enabled = !isUploading,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA4F869)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(24.dp)
+                            .height(50.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Text("Analyze Fish Condition", color = navyblue, fontSize = 16.sp)
+                    }
                 }
 
                 if (isUploading) {
@@ -313,6 +362,7 @@ fun DetectScreen(navController: NavController, aquariumSerial: String) {
         }
     }
 }
+
 
 @Composable
 fun InputOption(iconRes: Int, label: String, onClick: () -> Unit, enabled: Boolean = true) {
@@ -346,6 +396,7 @@ fun InputOption(iconRes: Int, label: String, onClick: () -> Unit, enabled: Boole
         }
     }
 }
+
 fun bitmapToUri(context: Context, bitmap: Bitmap): Uri {
     val file = File(context.cacheDir, "captured_image_${System.currentTimeMillis()}.jpg")
     file.outputStream().use {
@@ -353,7 +404,7 @@ fun bitmapToUri(context: Context, bitmap: Bitmap): Uri {
     }
     return FileProvider.getUriForFile(
         context,
-        "${context.packageName}.provider", // pastikan sama dengan di manifest
+        "${context.packageName}.provider",
         file
     )
 }

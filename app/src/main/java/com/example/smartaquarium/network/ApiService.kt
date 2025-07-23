@@ -68,6 +68,12 @@ data class ScheduleData(
     val time: String // ✅ Format waktu tetap String
 )
 
+data class ForecastItem(
+    val time: String,
+    val predicted_ph: Float,
+    val predicted_temperature: Float,
+    val predicted_tds: Float
+)
 
 
 // Interface Retrofit untuk API Smart Aquarium
@@ -124,7 +130,8 @@ interface ApiService {
     ):deleteResponse
 
     @GET("get-forecast-summary/{unit_id}")
-    suspend fun getForecastText(@Path("unit_id") unitId: String): Response<ResponseBody>
+    suspend fun getForecastData(@Path("unit_id") unitId: String): Response<List<ForecastItem>>
+
 }
 
 

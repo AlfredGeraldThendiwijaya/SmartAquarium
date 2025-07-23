@@ -1,5 +1,3 @@
-// English-translated version of HomeScreen.kt
-
 package com.example.smartaquarium.ViewUI
 
 import android.annotation.SuppressLint
@@ -19,6 +17,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalConfiguration
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -61,6 +60,9 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
     var showDialog by remember { mutableStateOf(false) }
     var selectedUnitId by remember { mutableStateOf<String?>(null) }
     val displayName = user?.displayName?.split(" ")?.firstOrNull() ?: "Guest"
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    Log.d("UserID", "User ID: $userId")
+
 
     val midnightGradient = listOf(
         0.1f to Color(0xFF193F62),
@@ -131,7 +133,17 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
                                 Text("Manage Your Discus", fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Normal)
                             }
                             Spacer(modifier = Modifier.height(16.dp))
-                            InfoCard(onAddAquarium = { name, serial -> viewModel.addAquarium(name, serial) }, aquariumCount = aquariumList.size)
+                            InfoCard(
+                                aquariumCount = aquariumList.size,
+                                viewModel = viewModel,
+                                onAddAquarium = { name, serial ->
+                                    viewModel.addAquarium(
+                                        name = name,
+                                        serial = serial,
+                                    )
+                                }
+                            )
+
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
@@ -172,7 +184,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = viewMode
                                     }
                                 } else if (aquariumList.isEmpty()) {
                                     item(span = { GridItemSpan(maxLineSpan) }) {
-                                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                                        Box(modifier = Modifier.fillMaxWidth().height(350.dp), contentAlignment = Alignment.Center) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                                 Image(painter = painterResource(id = R.drawable.akuarium_not_found), contentDescription = "No aquarium")
                                                 Text("No aquariums found", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = darkgray, modifier = Modifier.padding(top = 10.dp))

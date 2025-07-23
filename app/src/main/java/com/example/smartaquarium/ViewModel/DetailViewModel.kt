@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartaquarium.network.RetrofitInstance
@@ -13,20 +14,18 @@ import com.example.smartaquarium.network.temperature_reading
 import com.example.smartaquarium.network.turbidity_reading
 import com.example.smartaquarium.utils.AuthManager
 import com.example.smartaquarium.utils.GlobalStatusManager
-import com.github.mikephil.charting.data.Entry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.time.OffsetDateTime
 
 class DetailViewModel(application: Application) : AndroidViewModel(application) {
     private val sharedPrefs: SharedPreferences =
         application.getSharedPreferences("water_status_prefs", Context.MODE_PRIVATE)
 
-    private val _sensorDataPoints = MutableStateFlow<List<Entry>>(emptyList())
-    val sensorDataPoints: StateFlow<List<Entry>> get() = _sensorDataPoints
 
     private val _turbidity = MutableStateFlow<Double?>(null)
     val turbidity: StateFlow<Double?> get() = _turbidity
@@ -40,21 +39,39 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
     private val _tds = MutableStateFlow<Double?>(null)
     val tds: StateFlow<Double?> get() = _tds
 
-    val _forecastResult = MutableStateFlow<String?>(null)
+    private val _forecastResult = MutableStateFlow<String?>(null)
     val forecastResult: StateFlow<String?> get() = _forecastResult
 
+    val phForecast = mutableStateOf<List<Float>>(emptyList())
+    val tdsForecast = mutableStateOf<List<Float>>(emptyList())
+    val tempForecast = mutableStateOf<List<Float>>(emptyList())
+    val timeForecast = mutableStateOf<List<Long>>(emptyList()) // timestamp in millis
+
     fun fetchForecast(unitId: String) {
+
         viewModelScope.launch {
             try {
-                val response = RetrofitInstance.apiService.getForecastText(unitId)
+                val response = RetrofitInstance.apiService.getForecastData(unitId)
                 if (response.isSuccessful) {
-                    _forecastResult.value = response.body()?.string()
+                    val forecastList = response.body() ?: emptyList()
+
+                    phForecast.value = forecastList.map { it.predicted_ph }
+                    tdsForecast.value = forecastList.map { it.predicted_tds }
+                    tempForecast.value = forecastList.map { it.predicted_temperature }
+                    timeForecast.value = forecastList.map {
+                        // Parse waktu ISO ke timestamp millis
+                        OffsetDateTime.parse(it.time).toInstant().toEpochMilli()
+                    }
+                } else {
+                    Log.e("Forecast", "Response not successful: ${response.code()}")
                 }
             } catch (e: Exception) {
                 Log.e("Forecast", "Error fetching forecast", e)
             }
         }
     }
+
+
 
     fun fetchTurbidity(unitId: String) {
         AuthManager.getToken { token ->

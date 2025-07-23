@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:latest.release"))
     implementation("com.google.firebase:firebase-analytics")
@@ -66,9 +67,15 @@ dependencies {
 
 
 
+
     // Grafik dan Chart
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
     implementation("com.github.codersalman:Gauge-Library-Android:0.0.1")
+    implementation ("com.patrykandpatrick.vico:compose:2.1.3")
+    implementation("com.patrykandpatrick.vico:core:2.1.3")
+    implementation("com.patrykandpatrick.vico:compose-m3:2.1.3")
+
+
 
     // Google Maps
     implementation(libs.play.services.maps)
@@ -83,6 +90,16 @@ dependencies {
     implementation(libs.firebase.database.ktx)
     implementation(libs.androidx.room.runtime.android)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.protolite.well.known.types)
+
+
+    implementation ("androidx.camera:camera-camera2:1.3.1")
+    implementation ("androidx.camera:camera-lifecycle:1.3.1")
+    implementation ("androidx.camera:camera-view:1.3.1")
+    implementation ("androidx.camera:camera-extensions:1.3.1")
+    implementation(libs.androidx.appcompat)
+    implementation("androidx.compose.foundation:foundation:1.8.3") // Atau versi Compose yang sesuai
+
 
     // Testing
     testImplementation(libs.junit)

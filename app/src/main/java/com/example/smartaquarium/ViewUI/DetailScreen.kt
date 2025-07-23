@@ -1,15 +1,14 @@
 package com.example.smartaquarium.ViewUI
 
 import android.annotation.SuppressLint
-import android.util.Log
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material3.*
@@ -19,17 +18,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.smartaquarium.Component.DetailInfoCard
+import com.example.smartaquarium.Component.ForecastChartScreen
 import com.example.smartaquarium.Component.GaugeMeterWithStatus
 import com.example.smartaquarium.Component.InfoItem
 import com.example.smartaquarium.R
 import com.example.smartaquarium.ViewModel.DetailViewModel
-import com.example.smartaquarium.ui.theme.accentMint
 import com.example.smartaquarium.ui.theme.darkgray
 import com.example.smartaquarium.ui.theme.navyblue
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -38,10 +39,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.hypot
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
-fun String.lineOrNull(index: Int): String? {
-    return this.lines().getOrNull(index)?.trim()
-}
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -51,7 +48,6 @@ fun DetailScreen(
     aquariumSerial: String,
     viewModel: DetailViewModel = viewModel()
 ) {
-    val sensorData by viewModel.sensorDataPoints.collectAsState()
     val turbidity by viewModel.turbidity.collectAsState()
     val temperature by viewModel.temperature.collectAsState()
     val ph by viewModel.ph.collectAsState()
@@ -60,6 +56,8 @@ fun DetailScreen(
     val showDialog = remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+
+
 
     LaunchedEffect(aquariumSerial) {
         viewModel.startRealtimeUpdates(aquariumSerial)
@@ -170,7 +168,7 @@ fun DetailScreen(
                     ) {
                         Text(
                             modifier = Modifier.padding(horizontal = 20.dp),
-                            text = "Detail Info:",
+                            text = "Detail Info :",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -200,7 +198,18 @@ fun DetailScreen(
                             )
                         }
                     }
-
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            text = "Forecast Graph :",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                        )
+                    }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -208,56 +217,19 @@ fun DetailScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
-                        Card(
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFDFF5E3))
+                                .height(300.dp)
                         ) {
+                            ForecastChartScreen(
+                                phForecast = viewModel.phForecast.value,
+                                tdsForecast = viewModel.tdsForecast.value,
+                                tempForecast = viewModel.tempForecast.value,
+                                timeForecast = viewModel.timeForecast.value
+                        )
 
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = "Water Quality Forecast",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = darkgray
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
 
-                                val forecastLines = forecastText?.lines()
-
-                                if (forecastLines != null && forecastLines.size >= 2) {
-                                    val duration = forecastLines[0]
-                                        .replace("Total air sehat bertahan selama:", "Safe water duration:")
-                                        .replace("jam", "hours")
-                                    val range = forecastLines[1]
-                                        .replace("Dari:", "From:")
-                                        .replace("s/d", "to")
-
-                                    Text(
-                                        text = duration.trim(),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        color = darkgray
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "\uD83D\uDCCB Predicted to worsen on:",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = darkgray
-                                    )
-                                    Text(
-                                        text = range.trim(),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        color = darkgray
-                                    )
-                                } else {
-                                    Text(text = "Loading...", color = darkgray)
-                                }
-                            }
                         }
                     }
 
@@ -324,7 +296,6 @@ fun DetailScreen(
                             InfoItem(R.drawable.suhu, "Temperature", "Indicates the water temperature in the aquarium.")
                             InfoItem(R.drawable.ph, "pH", "Measures the acidity level of the water.")
                             InfoItem(R.drawable.ppm, "TDS", "Indicates the total dissolved solids (ppm).")
-                            InfoItem(R.drawable.turbidity, "Turbidity", "Indicates the clarity level of the water (NTU).")
                             InfoItem(R.drawable.risk, "Risk Status", "Displays Safe, Risky, or Dangerous status.")
                         }
                     },

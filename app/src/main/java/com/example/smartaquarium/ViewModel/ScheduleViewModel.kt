@@ -99,7 +99,6 @@ class ScheduleViewModel : ViewModel() {
 
 
     // ✅ Fungsi untuk validasi format waktu (Pastikan hanya "HH:mm")
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun validateTimeFormat(time: String): String? {
         return try {
             val parsedTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"))

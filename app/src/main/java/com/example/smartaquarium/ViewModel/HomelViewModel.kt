@@ -5,10 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartaquarium.network.AddUnitRequest
-import com.example.smartaquarium.network.AquariumResponse
-import com.example.smartaquarium.network.RetrofitInstance
 import com.example.smartaquarium.network.RetrofitInstance.apiService
-import com.example.smartaquarium.network.ScheduleData
 import com.example.smartaquarium.network.deleteUnit
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -102,21 +99,22 @@ data class Aquarium(
         }
 
 
-    fun addAquarium(name: String, serial: String) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val request = AddUnitRequest(userId, serial, name)
+        fun addAquarium(name: String, serial: String) {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+            val request = AddUnitRequest(userId, serial, name)
 
-        viewModelScope.launch {
-            try {
-                RetrofitInstance.apiService.addAquarium(request)
-                fetchAquariums()
-                delay(1000) // ✅ Tunggu biar Firebase update otomatis
+            viewModelScope.launch {
+                try {
+                    apiService.addAquarium(request)
+                    fetchAquariums()
+                    delay(1000) // ✅ Tunggu biar Firebase update otomatis
 
-            } catch (e: Exception) {
-                println("Error adding aquarium: ${e.message}")
+                } catch (e: Exception) {
+                    println("Error adding aquarium: ${e.message}")
+                }
             }
         }
-    }
+
 
         fun deleteSchedule(userId: String, unitId: String) {
             viewModelScope.launch {
